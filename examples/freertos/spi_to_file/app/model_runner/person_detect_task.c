@@ -17,6 +17,9 @@
 #include "person_detect_model_data.h"
 #include "person_detect_model_runner.h"
 
+#include "Image.h"
+#include "vision.h"
+
 #ifdef OUTPUT_IMAGE_STREAM
 #include "xscope.h"
 #endif
@@ -81,7 +84,9 @@ static void person_detect_app_task(void *args) {
    * 
    * Write the array to the vector
    * 
-   * 
+   * for(int i = 0; i < IMAGE_SIZE; i++){ //or possibly that itterator thing.
+   * image.vector.at(i) = ai_img_buf[i]
+   * }
    * 
    * 
    * //write_bitmap("testout.bmp", my_image, 1);

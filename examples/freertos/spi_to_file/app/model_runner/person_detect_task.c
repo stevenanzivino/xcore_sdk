@@ -50,13 +50,16 @@ static void person_detect_app_task(void *args) {
   uint32_t val = 0;
   int toggle = 0;
 
+  //ProjectMAYA variables
+  Image my_image(96,96,1);
+
   led_port = rtos_gpio_port(PORT_LEDS);
   rtos_gpio_port_enable(gpio_ctx, led_port);
   rtos_gpio_port_out(gpio_ctx, led_port, val);
 
   while (1) {
     rtos_printf("Wait for next image...\n");
-    xQueueReceive(input_queue, &img_buf, portMAX_DELAY);
+    xQueueReceive(input_queue, &img_buf, portMAX_DELAY);                  //Recieves image ptr
 
     /* img_buf[i%2] contains the values we want to pass to the ai task */
     for (int i = 0; i < (IMAGE_SIZE * 2); i++) {
@@ -73,6 +76,17 @@ static void person_detect_app_task(void *args) {
     }
     taskEXIT_CRITICAL();
 #endif
+
+  /**Highjack ai_img_buf[]
+   * 
+   * Write the array to the vector
+   * 
+   * 
+   * 
+   * 
+   * //write_bitmap("testout.bmp", my_image, 1);
+   * 
+   **/
 
     rtos_intertile_tx(adr->intertile_ctx, adr->port, ai_img_buf, IMAGE_SIZE);
 

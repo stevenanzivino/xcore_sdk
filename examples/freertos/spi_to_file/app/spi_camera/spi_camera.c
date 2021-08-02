@@ -16,6 +16,21 @@
 #include "spi_camera.h"
 #include "ov2640.h"
 #include "app_conf.h"
+//#include "Image.h"      //Include image.h
+
+/**
+ * Objective: Hijack input buffer from this document and turn it into a vision style 'image'
+ * Use the image and write to a data folder.
+ * 
+ * Problems: Identifying the size of the image that my camera reads in.
+ * How to efficently (enough) change the data from entering a fixed array to a vector.
+ * 
+ * How to deal with the dat coming in as uint_8 when we want int_8
+ * 
+ * Proper run command: xrun --xscope bin/person_detect.xe
+ * 
+ **/ 
+
 
 static void camera_task( void *arg )
 {
@@ -30,22 +45,24 @@ static void camera_task( void *arg )
 
     while( 1 )
     {
-        img_buf = pvPortMalloc( sizeof( uint8_t ) * IMAGE_BUF_SIZE );
-        configASSERT( img_buf != NULL );
+        img_buf = pvPortMalloc( sizeof( uint8_t ) * IMAGE_BUF_SIZE );                       //Allocate memory equal to image buffer size, give pointer to img_buf
+        configASSERT( img_buf != NULL );                                                    //Assert allocation success
 
         /* Poll until capture is completed */
-        while( !ov2640_capture_done() )
+        while( !ov2640_capture_done() )                                                     //While the capture is not yet completed
         {
-            vTaskDelay( pdMS_TO_TICKS( 1 ) );
+            vTaskDelay( pdMS_TO_TICKS( 1 ) );                                               //Wait one ms and check again.
         }
 
         debug_printf("arducam buffer has %d bytes ready\n", ov2640_read_fifo_length());
         
-        ov2640_spi_read_buf( img_buf, IMAGE_BUF_SIZE, &tx_buf, 1 );
+        ov2640_spi_read_buf( img_buf, IMAGE_BUF_SIZE, &tx_buf, 1 );                         //Reads a buffer from a location???
+        //Check the readme, OV2640 is the camera != ARDUCAM.
+        //OV camera module, 
 
         debug_printf("Arducam -> FreeRTOS done\n");
 
-        if( xQueueSend( output_queue, &img_buf, pdMS_TO_TICKS( 1 ) ) == errQUEUE_FULL )
+        if( xQueueSend( output_queue, &img_buf, pdMS_TO_TICKS( 1 ) ) == errQUEUE_FULL )     //FreeRTOS memory management?
         {
             debug_printf( "Camera frame lost\n" );
             vPortFree( img_buf );

@@ -83,13 +83,13 @@ void vApplicationDaemonTaskStartup(void *arg)
         rtos_printf("Starting i2c driver\n");
         rtos_i2c_master_start(i2c_master_ctx);
 
-        QueueHandle_t qcam2ai = xQueueCreate( 1, sizeof( uint8_t* ) );
+        QueueHandle_t qcam2ai = xQueueCreate( 1, sizeof( uint8_t* ) ); //Creats a que one uint8 ptr.
 
         if( create_spi_camera_to_queue( ov_device_ctx, i2c_master_ctx, appconfSPI_CAMERA_TASK_PRIORITY, qcam2ai )
             == pdTRUE )
         {
             rtos_printf("Starting person detect app task\n");
-            person_detect_app_task_create(person_detect_addr, gpio_ctx, appconfPERSON_DETECT_TASK_PRIORITY, qcam2ai);
+            person_detect_app_task_create(person_detect_addr, gpio_ctx, appconfPERSON_DETECT_TASK_PRIORITY, qcam2ai); //Maybe dont need?
         }
         else
         {

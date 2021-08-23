@@ -44,6 +44,7 @@ set(APP_SOURCES
     "app/model_runner/person_detect_task.c"
     "app/vision/src/Image.cc"
     "app/vision/src/basic_functions.cc"
+    "app/vision/src/Vision_api.cc"
 )
 set(APP_INCLUDES
     "app"

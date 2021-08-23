@@ -69,6 +69,7 @@ Running with GPIO only:
 .. code-block:: console
 
     $ xrun --xscope ../bin/person_detection.xe
+    xrun --xscope ./bin/person_detect.xe <This one works>
 
 Running with GPIO and host:
 

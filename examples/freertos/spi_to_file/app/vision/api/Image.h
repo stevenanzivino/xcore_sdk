@@ -1,8 +1,16 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+//#define _cplusplus 1
+
+//#ifdef __cplusplus
+//extern "C" {  
+//#endif
+
 #include <memory>
 #include <vector>
+//Create a wrapper that offers C a struct to manage the 'object'
+//Include all callable functions in the wrapper.
 
 #include "vision.h"
 
@@ -64,4 +72,11 @@ class Image {
 
 };
 }  // namespace vision
+
+//#ifdef __cplusplus
+//};
+//#endif
+
+
 #endif  // IMAGE_H
+

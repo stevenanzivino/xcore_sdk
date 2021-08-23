@@ -17,8 +17,8 @@
 #include "person_detect_model_data.h"
 #include "person_detect_model_runner.h"
 
-#include "Image.h"
-#include "vision.h"
+//#include "Image.h"
+//#include "vision.h"
 
 #ifdef OUTPUT_IMAGE_STREAM
 #include "xscope.h"
@@ -54,7 +54,7 @@ static void person_detect_app_task(void *args) {
   int toggle = 0;
 
   //ProjectMAYA variables
-  Image my_image(96,96,1);
+  //Image my_image(96,96,1);
 
   led_port = rtos_gpio_port(PORT_LEDS);
   rtos_gpio_port_enable(gpio_ctx, led_port);

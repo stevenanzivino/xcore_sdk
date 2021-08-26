@@ -16,6 +16,7 @@
 #include "person_detect_task.h"
 #include "person_detect_model_data.h"
 #include "person_detect_model_runner.h"
+#include "Vision_api.h"
 
 //#include "Image.h"
 //#include "vision.h"
@@ -53,9 +54,6 @@ static void person_detect_app_task(void *args) {
   uint32_t val = 0;
   int toggle = 0;
 
-  //ProjectMAYA variables
-  //Image my_image(96,96,1);
-
   led_port = rtos_gpio_port(PORT_LEDS);
   rtos_gpio_port_enable(gpio_ctx, led_port);
   rtos_gpio_port_out(gpio_ctx, led_port, val);
@@ -92,6 +90,13 @@ static void person_detect_app_task(void *args) {
    * //write_bitmap("testout.bmp", my_image, 1);
    * 
    **/
+  //writeImage(ai_image_buf,96,96,1);
+  char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
+  rtos_printf("\nCalling Get Image Pointer Here:");
+  void* imagePTR = GetImagePointer(ai_img_buf,96,96,1);
+  writeImage(ai_img_buf,96,96,1, Filepath);
+  rtos_printf("\nEnd Call to Get Image Pointer:");
+  //printImage(imagePTR);
 
     rtos_intertile_tx(adr->intertile_ctx, adr->port, ai_img_buf, IMAGE_SIZE);
 

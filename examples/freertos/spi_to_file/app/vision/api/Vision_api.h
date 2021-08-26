@@ -5,10 +5,22 @@
 #ifndef Vision_Api_H
 #define Vision_Api_H
 
-void* CreateImage(int*, int,int,int);
+void* CreateImage(uint8_t*, int,int,int);
+void WriteToDirectory(void*,char*);
+void ArrayToFile(uint8_t*, int, int, int, char*);
 
-void* GetImagePointer(int* DataPtr, int width, int height, int channels){
+
+void* GetImagePointer(uint8_t* DataPtr, int width, int height, int channels){
     return(CreateImage(DataPtr, width, height, channels));
 }
+
+void printImage(void* imagePTR){
+    WriteToDirectory(imagePTR, "/FILEPATH/HERE.txt");
+}
+
+writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingpath){
+    ArrayToFile(DataPtr,width,height,channels,writingpath);
+}
+//Should probably have some Destroy image function, since another one creates it.
 
 #endif  // Vision_Api_H

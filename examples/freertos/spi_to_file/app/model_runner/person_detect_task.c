@@ -16,7 +16,7 @@
 #include "person_detect_task.h"
 #include "person_detect_model_data.h"
 #include "person_detect_model_runner.h"
-#include "Vision_api.h"
+//#include "Vision_api.h"
 
 //#include "Image.h"
 //#include "vision.h"
@@ -91,11 +91,11 @@ static void person_detect_app_task(void *args) {
    * 
    **/
   //writeImage(ai_image_buf,96,96,1);
-  char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
-  rtos_printf("\nCalling Get Image Pointer Here:");
-  void* imagePTR = GetImagePointer(ai_img_buf,96,96,1);
-  writeImage(ai_img_buf,96,96,1, Filepath);
-  rtos_printf("\nEnd Call to Get Image Pointer:");
+  //char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
+  //rtos_printf("\nCalling Get Image Pointer Here:");
+  //void* imagePTR = GetImagePointer(ai_img_buf,96,96,1);
+  //writeImage(ai_img_buf,96,96,1, Filepath);
+  //rtos_printf("\nEnd Call to Get Image Pointer:");
   //printImage(imagePTR);
 
     rtos_intertile_tx(adr->intertile_ctx, adr->port, ai_img_buf, IMAGE_SIZE);

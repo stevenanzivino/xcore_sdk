@@ -42,17 +42,17 @@ set(APP_SOURCES
     "app/model_runner/person_detect_model_runner.cc"
     "app/model_runner/person_detect_model_data.c"
     "app/model_runner/person_detect_task.c"
-    #"app/vision/src/Image.cc"
-    #"app/vision/src/basic_functions.cc"
-    #"app/vision/src/Vision_api.cc"
-    #"app/vision/src/file_utils.cc"
+    "app/vision/src/Image.cc"
+    "app/vision/src/basic_functions.cc"
+    "app/vision/src/Vision_api.cc"
+    "app/vision/src/file_utils.cc"
 )
 set(APP_INCLUDES
     "app"
     "app/ov2640"
     "app/spi_camera"
     "app/model_runner"
-    #"app/vision/api"
+    "app/vision/api"
 )
 
 add_compile_definitions(

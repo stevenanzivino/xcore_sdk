@@ -5,7 +5,10 @@
 #ifndef Vision_Api_H
 #define Vision_Api_H
 
-//#if ON_TILE(0)
+//System Headers
+#include <platform.h>
+
+#if ON_TILE(0)
 //void* CreateImage(uint8_t*, int,int,int);
 //void WriteToDirectory(void*,char*);
 void ArrayToFile(uint8_t*, int, int, int, char*);
@@ -24,6 +27,6 @@ writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingp
 }
 //Should probably have some Destroy image function, since another one creates it.
 
-//#endif //On_Tile(0)
+#endif //On_Tile(0)
 
 #endif  // Vision_Api_H

@@ -5,7 +5,11 @@
 
 //extern "C" <FunctionReturnType> <FunctionSignature>;
 
-//#if ON_TILE(0)
+/* System headers */
+#include <platform.h>
+
+
+#if ON_TILE(0)
 
 #include <iostream>
 #include <cstring>
@@ -56,4 +60,4 @@ void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* fi
     write_bitmap(stringpath, my_image, 1);
 }
 
-//#endif //On_Tile(0)
+#endif //On_Tile(0)

@@ -16,21 +16,6 @@
 #include "spi_camera.h"
 #include "ov2640.h"
 #include "app_conf.h"
-//#include "Image.h"      //Include image.h
-
-/**
- * Objective: Hijack input buffer from this document and turn it into a vision style 'image'
- * Use the image and write to a data folder.
- * 
- * Problems: Identifying the size of the image that my camera reads in.
- * How to efficently (enough) change the data from entering a fixed array to a vector.
- * 
- * How to deal with the dat coming in as uint_8 when we want int_8
- * 
- * Proper run command: xrun --xscope bin/person_detect.xe
- * 
- **/ 
-
 
 static void camera_task( void *arg )
 {

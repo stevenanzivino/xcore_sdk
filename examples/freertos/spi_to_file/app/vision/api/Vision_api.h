@@ -23,7 +23,16 @@ void printImage(void* imagePTR){
 }
 */
 writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingpath){
-    ArrayToFile(DataPtr,width,height,channels,writingpath);
+    bool firstcall = true;
+
+    
+    while(1){
+        if(firstcall){
+            ArrayToFile(DataPtr,width,height,channels,writingpath);
+            firstcall = false;
+        }
+    }
+    
 }
 //Should probably have some Destroy image function, since another one creates it.
 

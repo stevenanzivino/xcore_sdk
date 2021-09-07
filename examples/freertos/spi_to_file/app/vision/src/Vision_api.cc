@@ -44,6 +44,7 @@ void WriteToDirectory(void*,char*){
 }
 //*/
 void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* filepath){
+    /*
     std::cout << "This has reached ArrayToFile Function" << std::endl;
 
     vision::Image my_image(width,height,channels);
@@ -58,6 +59,7 @@ void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* fi
     std::cout << "Recieved Filepath: " << stringpath << std::endl;
     
     write_bitmap(stringpath, my_image, 1);
+    */
 }
 
 #endif //On_Tile(0)

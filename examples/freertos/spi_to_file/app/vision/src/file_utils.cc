@@ -14,6 +14,7 @@ extern "C"
 #include "Image.h"
 #include "Kernel.h"
 #include "vision.h"
+//#include "file_utils.cc" //Added due to inability to find filp and pad functions
 #include "vision_utils.hpp"
 
 #define DATA_OFFSET_OFFSET 0x000A

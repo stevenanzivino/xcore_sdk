@@ -20,6 +20,7 @@
 #include "board_init.h"
 #include "spi_camera.h"
 #include "person_detect_task.h"
+#include "Lib_vision_task.h"
 
 #if ON_TILE(0)
 static rtos_i2c_master_t i2c_master_ctx_s;

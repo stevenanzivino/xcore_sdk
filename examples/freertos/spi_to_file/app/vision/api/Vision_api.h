@@ -8,6 +8,8 @@
 //System Headers
 #include <platform.h>
 
+#include <stdint.h>
+
 #if ON_TILE(0)
 //void* CreateImage(uint8_t*, int,int,int);
 //void WriteToDirectory(void*,char*);
@@ -23,13 +25,13 @@ void printImage(void* imagePTR){
 }
 */
 writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingpath){
-    bool firstcall = true;
+    int firstcall = 1;
 
     
     while(1){
         if(firstcall){
             ArrayToFile(DataPtr,width,height,channels,writingpath);
-            firstcall = false;
+            firstcall = 0;
         }
     }
     

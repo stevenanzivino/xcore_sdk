@@ -46,6 +46,7 @@ set(APP_SOURCES
     "app/vision/src/basic_functions.cc"
     "app/vision/src/Vision_api.cc"
     "app/vision/src/file_utils.cc"
+    "app/vision/src/Lib_vision_task.c"
     #"app/vision/src/vision_utils.hpp"
 )
 set(APP_INCLUDES

@@ -19,6 +19,7 @@
 #include "app_conf.h"
 #include "board_init.h"
 #include "spi_camera.h"
+#define vision_args
 #include "person_detect_task.h"
 #include "Lib_vision_task.h"
 
@@ -39,6 +40,9 @@ static rtos_intertile_t *intertile_ctx = &intertile_ctx_s;
 
 static rtos_intertile_address_t person_detect_addr_s;
 static rtos_intertile_address_t *person_detect_addr = &person_detect_addr_s;
+
+static rtos_intertile_address_t lib_vision_addr_s;
+static rtos_intertile_address_t *lib_vision_addr = &lib_vision_addr_s;
 
 void vApplicationMallocFailedHook( void )
 {
@@ -73,6 +77,10 @@ void vApplicationDaemonTaskStartup(void *arg)
     person_detect_addr->intertile_ctx = intertile_ctx;
     person_detect_addr->port = PERSON_DETECT_PORT;
 
+    lib_vision_addr->intertile_ctx = intertile_ctx;
+    lib_vision_addr->port = 15; //I dont know how many ports there are, or how to determine if they are already utilized.
+    
+
     #if ON_TILE(0)
     {
         rtos_printf("Starting GPIO driver\n");
@@ -96,6 +104,11 @@ void vApplicationDaemonTaskStartup(void *arg)
         {
             debug_printf("Camera setup failed...\n");
         }
+
+        rtos_printf("Starting lib vision app task\n");
+        //person_detect_app_task_create(person_detect_addr, gpio_ctx, appconfPERSON_DETECT_TASK_PRIORITY, qcam2ai); //Maybe dont need?
+        //rtos_intertile_start(lib_vision_addr);
+        lib_vision_task_create(lib_vision_addr,appconfPERSON_DETECT_TASK_PRIORITY/* any more variables that are necessary for creating the task.*/);
     }
     #endif
 

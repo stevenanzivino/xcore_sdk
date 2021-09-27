@@ -38,6 +38,10 @@ writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingp
 }
 //Should probably have some Destroy image function, since another one creates it.
 
+void Vision_API_Void(){
+
+}
+
 #endif //On_Tile(0)
 
 #endif  // Vision_Api_H

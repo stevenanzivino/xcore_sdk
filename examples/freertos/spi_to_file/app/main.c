@@ -106,8 +106,9 @@ void vApplicationDaemonTaskStartup(void *arg)
         }
 
         rtos_printf("Starting lib vision app task\n");
-        //person_detect_app_task_create(person_detect_addr, gpio_ctx, appconfPERSON_DETECT_TASK_PRIORITY, qcam2ai); //Maybe dont need?
-        //rtos_intertile_start(lib_vision_addr);
+        int stackSize = RTOS_THREAD_STACK_SIZE(lib_vision_task_create);
+        rtos_printf("vision task stack is %u\n",RTOS_THREAD_STACK_SIZE(lib_vision_task_create));
+        //rtos_printf("My Stacksize: " + stackSize);
         lib_vision_task_create(lib_vision_addr,appconfPERSON_DETECT_TASK_PRIORITY/* any more variables that are necessary for creating the task.*/);
     }
     #endif

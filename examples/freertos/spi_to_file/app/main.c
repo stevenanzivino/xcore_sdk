@@ -93,6 +93,7 @@ void vApplicationDaemonTaskStartup(void *arg)
         rtos_i2c_master_start(i2c_master_ctx);
 
         QueueHandle_t qcam2ai = xQueueCreate( 1, sizeof( uint8_t* ) ); //Creats a que one uint8 ptr.
+        QueueHandle_t qcam2vision = xQueueCreate( 1, sizeof( uint8_t* ) ); //Creats a que one uint8 ptr.
 
         if( create_spi_camera_to_queue( ov_device_ctx, i2c_master_ctx, appconfSPI_CAMERA_TASK_PRIORITY, qcam2ai )
             == pdTRUE )
@@ -108,8 +109,8 @@ void vApplicationDaemonTaskStartup(void *arg)
         rtos_printf("Starting lib vision app task\n");
         int stackSize = RTOS_THREAD_STACK_SIZE(lib_vision_task_create);
         rtos_printf("vision task stack is %u\n",RTOS_THREAD_STACK_SIZE(lib_vision_task_create));
-        //rtos_printf("My Stacksize: " + stackSize);
-        lib_vision_task_create(lib_vision_addr,appconfPERSON_DETECT_TASK_PRIORITY/* any more variables that are necessary for creating the task.*/);
+        rtos_printf("My Stacksize: " + stackSize);
+        lib_vision_task_create(lib_vision_addr,appconfPERSON_DETECT_TASK_PRIORITY,qcam2vision/* any more variables that are necessary for creating the task.*/);
     }
     #endif
 

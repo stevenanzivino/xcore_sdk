@@ -222,7 +222,7 @@ void person_detect_app_task_create(rtos_intertile_address_t *intertile_addr,
 }
 
 void person_detect_model_runner_task_create(
-    rtos_intertile_address_t *intertile_addr, unsigned priority) {
+    rtos_intertile_address_t *intertile_addr, unsigned priority) { //This is a Tile 1 Function
   model_runner_args_t *args = pvPortMalloc(sizeof(model_runner_args_t));
   QueueHandle_t input_queue = xQueueCreate(1, sizeof(int32_t *));
 

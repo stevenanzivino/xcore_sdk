@@ -12,15 +12,15 @@
 
 typedef struct Lib_vision_args_t{
         QueueHandle_t input_queue;
-        rtos_intertile_address_t intertile_addr;
+        rtos_intertile_address_t *intertile_addr;
         //rtos_gpio_t gpio_ctx;
 }lib_vision_args_t;
 
 //This file is a lib_vision copy of vision_api
 
-void lib_vision_task(){
-  //lib_vision_args_t *targs = (lib_vision_args_t *)args;
-  //QueueHandle_t input_queue = targs->input_queue;
+void lib_vision_task(void *args){
+  lib_vision_args_t *targs = (lib_vision_args_t *)args;
+  QueueHandle_t input_queue = targs->input_queue;
   uint8_t *img_buf = NULL;
   uint8_t final_img_buf[IMAGE_SIZE];
 /*
@@ -33,11 +33,12 @@ repeat loop
   //char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
   /*
   rtos_printf("\nInitialized Lib_vision Variables");*/
+  rtos_printf("\n Reached LibVision Thread Loop");
   while(1){
-    /*rtos_printf("\n Vision waiting for image...");
+    //rtos_printf("\n Vision waiting for image...");
     //Get Communications here, uh somehow.
-    rtos_printf("Wait for next image...\n");
-    xQueueReceive(input_queue, &img_buf, portMAX_DELAY);                  //Recieves image ptr*/
+    //rtos_printf("Wait for next image...\n");
+    //xQueueReceive(input_queue, &img_buf, portMAX_DELAY);                  //Recieves image ptr*/
 
     /* img_buf[i%2] contains the values we want to print over the api */
     /*for (int i = 0; i < (IMAGE_SIZE * 2); i++) {
@@ -62,18 +63,43 @@ repeat loop
 
 }
 
-void lib_vision_task_create(rtos_intertile_address_t *intertile_addr,unsigned priority){
+///*
+static void lib_vision_runner_rx(void *args) {
+  
+  lib_vision_args_t *targs = (lib_vision_args_t *)args;
+  QueueHandle_t q = targs->input_queue;
+  rtos_intertile_address_t *adr = targs->intertile_addr;
+  uint8_t *input_tensor;
+  int input_tensor_len;
+//*/
+  rtos_printf("\nLib_vision_runner_rx <While>");
+  while (1) {
+    //input_tensor_len = rtos_intertile_rx(adr->intertile_ctx, adr->port,
+    //                                     (void **)&input_tensor, portMAX_DELAY);
+    //xQueueSend(q, &input_tensor, portMAX_DELAY);
+  }
+  
+}
+//*/
+void lib_vision_task_create(rtos_intertile_address_t *intertile_addr,
+    unsigned priority,QueueHandle_t input_queue){
 
-  rtos_printf("lib_vision_task_create reached\n");
+  rtos_printf("\nlib_vision_task_create reached");
   lib_vision_args_t *args = pvPortMalloc(sizeof(lib_vision_args_t));
 
   //configASSERT(args);
 
-  args->intertile_addr = *intertile_addr;
+  args->intertile_addr = intertile_addr;
+  args->input_queue = input_queue;
 
   xTaskCreate((TaskFunction_t)lib_vision_task, "lib_vision_task",
           RTOS_THREAD_STACK_SIZE(lib_vision_task), args, priority,
           NULL);
+
+  xTaskCreate((TaskFunction_t)lib_vision_runner_rx, "lib_vision_runner_rx",
+          RTOS_THREAD_STACK_SIZE(lib_vision_runner_rx), args, priority,
+          NULL);
+  
 }
 
 #endif //On_Tile(0)

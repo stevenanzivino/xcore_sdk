@@ -213,9 +213,6 @@ void person_detect_app_task_create(rtos_intertile_address_t *intertile_addr,
     xTaskCreate((TaskFunction_t)person_detect_app_task, "person_detect_app",
                 RTOS_THREAD_STACK_SIZE(person_detect_app_task), args, priority,
                 NULL);
-    /*xTaskCreate((TaskFunction_t)person_detect_app_task, "person_detect_app",
-                2000, args, priority,
-                NULL);*/
   } else {
     rtos_printf("Invalid gpio ctx provided\n");
   }

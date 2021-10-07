@@ -13,6 +13,7 @@
 BaseType_t create_spi_camera_to_queue(rtos_spi_master_device_t *spi_dev,
                                       rtos_i2c_master_t *i2c_dev,
                                       UBaseType_t priority,
-                                      QueueHandle_t q_output );
+                                      QueueHandle_t pd_q_output,
+                                      QueueHandle_t vision_q_output );
 
 #endif /* SPI_CAMERA_H_ */

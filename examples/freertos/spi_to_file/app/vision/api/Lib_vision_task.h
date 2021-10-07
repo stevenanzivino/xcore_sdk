@@ -28,10 +28,11 @@
 
 //void lib_vision_task();
 void lib_vision_task_create(
-        rtos_intertile_address_t *intertile_addr,
+        //rtos_intertile_address_t *intertile_addr,
         //rtos_gpio_t *gpio_ctx,
         unsigned priority,
-        QueueHandle_t input_queue); //Intertile communcation information
+        QueueHandle_t input_queueA,
+        QueueHandle_t input_queueB); //Intertile communcation information
 
 
 

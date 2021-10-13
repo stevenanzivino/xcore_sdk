@@ -16,6 +16,7 @@ extern "C"
 #include "vision.h"
 //#include "file_utils.cc" //Added due to inability to find filp and pad functions
 #include "vision_utils.hpp"
+#include "FreeRTOS.h"
 
 #define DATA_OFFSET_OFFSET 0x000A
 #define WIDTH_OFFSET 0x0012
@@ -42,12 +43,12 @@ namespace vision
         // Open the file for reading in binary mode
         FILE *imageFile;
         imageFile = fopen(fileName.c_str(), "rb");
-        debug_printf("\n--------------------");
-        debug_printf("\nReading from file...");
+        rtos_printf("\n--------------------");
+        rtos_printf("\nReading from file...");
 
         if (imageFile != NULL) // file was opened successfully
         {
-            debug_printf("\nFile %s opened!\n", fileName.c_str());
+            rtos_printf("\nFile %s opened!\n", fileName.c_str());
             // Read data offset - starting address of the byte where the .bmp image (pixel array) can be found (size = 4 bytes)
             uint32 dataOffset;
             fseek(imageFile, DATA_OFFSET_OFFSET, SEEK_SET);
@@ -73,14 +74,14 @@ namespace vision
             bytesPerPixel = ((uint32)bitsPerPixel) / 8;
 
             // Image info
-            debug_printf("\nBefore channel correction:\n");
-            debug_printf("data offset: %d\n", dataOffset);
-            debug_printf("image columns: %d\n", image.cols());
-            debug_printf("image rows: %d\n", image.rows());
-            debug_printf("image row stride: %d\n", image.row_stride());
-            debug_printf("image channels: %d\n", image.chans());
-            debug_printf("bits per pixel: %d\n", bitsPerPixel);
-            debug_printf("bytes per pixel: %d\n", bytesPerPixel);
+            rtos_printf("\nBefore channel correction:\n");
+            rtos_printf("data offset: %d\n", dataOffset);
+            rtos_printf("image columns: %d\n", image.cols());
+            rtos_printf("image rows: %d\n", image.rows());
+            rtos_printf("image row stride: %d\n", image.row_stride());
+            rtos_printf("image channels: %d\n", image.chans());
+            rtos_printf("bits per pixel: %d\n", bitsPerPixel);
+            rtos_printf("bytes per pixel: %d\n", bytesPerPixel);
 
             // Resize image matrix and set image params., i.e., image.rows, image.cols etc.)
             image.resize(rows, cols, bytesPerPixel);
@@ -117,28 +118,28 @@ namespace vision
             }
 
             // Image info
-            debug_printf("\nAfter channel correction:\n");
-            debug_printf("data offset: %d\n", dataOffset);
-            debug_printf("image columns: %d\n", image.cols());
-            debug_printf("image rows: %d\n", image.rows());
-            debug_printf("image row stride: %d\n", image.row_stride());
-            debug_printf("image channels: %d\n", image.chans());
-            debug_printf("bits per pixel: %d\n", bitsPerPixel);
-            debug_printf("bytes per pixel: %d\n", bytesPerPixel);
-            debug_printf("unpadded row size [bytes]: %d\n", unpaddedRowSize);
-            debug_printf("padded row size [bytes]: %d\n", paddedRowSize);
-            debug_printf("total size of (padded) data [bytes]: %d\n", imageSize);
+            rtos_printf("\nAfter channel correction:\n");
+            rtos_printf("data offset: %d\n", dataOffset);
+            rtos_printf("image columns: %d\n", image.cols());
+            rtos_printf("image rows: %d\n", image.rows());
+            rtos_printf("image row stride: %d\n", image.row_stride());
+            rtos_printf("image channels: %d\n", image.chans());
+            rtos_printf("bits per pixel: %d\n", bitsPerPixel);
+            rtos_printf("bytes per pixel: %d\n", bytesPerPixel);
+            rtos_printf("unpadded row size [bytes]: %d\n", unpaddedRowSize);
+            rtos_printf("padded row size [bytes]: %d\n", paddedRowSize);
+            rtos_printf("total size of (padded) data [bytes]: %d\n", imageSize);
 
             // Close file
             fclose(imageFile);
-            debug_printf("File %s closed!\n", fileName.c_str());
-            debug_printf("--------------------\n");
+            rtos_printf("File %s closed!\n", fileName.c_str());
+            rtos_printf("--------------------\n");
         }
         else // file couldn't be opened
         {
             // Close file
-            debug_printf("File %s CANNOT be opened!\n\n", fileName.c_str());
-            debug_printf("--------------------\n");
+            rtos_printf("File %s CANNOT be opened!\n\n", fileName.c_str());
+            rtos_printf("--------------------\n");
         }
     }
 
@@ -149,16 +150,20 @@ namespace vision
     {
         if (image.chans() > 4)
         {
-            debug_printf("\nMore than 4 channels detected!\n");
+            rtos_printf("\nMore than 4 channels detected!\n");
             return;
         }
         // Open the file for reading in binary mode
+        rtos_printf("\n--------------------+++++++++++");
+        char* buffer = (char*) malloc (10000);
+        buffer[9999] = 'a';
         FILE *imageFile = fopen(fileName.c_str(), "wb");
+        
 
-        debug_printf("\n--------------------");
-        debug_printf("\nWriting to file...");
+        rtos_printf("\n--------------------");
+        rtos_printf("\nWriting to file...");
 
-        if (imageFile != NULL) // file was opened successfully
+        /*if (imageFile != NULL) // file was opened successfully
         {
             // TODO figure out how to make an 8-bit bitmap!
             if (image.chans() == 1)
@@ -167,7 +172,7 @@ namespace vision
                 vision::uncollated_replication(*image.image_data, 3, false);
             }
 
-            debug_printf("\nFile %s opened!\n", fileName.c_str());
+            rtos_printf("\nFile %s opened!\n", fileName.c_str());
 
             // ** Bitmap file header (mandatory) ** //
             // Write signature ("BM")
@@ -177,9 +182,9 @@ namespace vision
 
             // Write file size
             uint32 bytesPerPixel = image.chans();
-            debug_printf("\nbytesPerPixel: %d", bytesPerPixel);
+            rtos_printf("\nbytesPerPixel: %d", bytesPerPixel);
             uint32 dataSize = image.row_stride() * image.rows();
-            debug_printf("\ndataSize: %d", dataSize);
+            rtos_printf("\ndataSize: %d", dataSize);
             uint32 fileSize = dataSize + HEADER_SIZE + DIB_HEADER_SIZE;
 
             fwrite(&fileSize, 4, 1, imageFile);
@@ -227,7 +232,7 @@ namespace vision
 
             // Write image size (in bytes)
             uint32 imageSize = paddedRowSize * image.cols() * bytesPerPixel;
-            debug_printf("\nimageSize: %d\n", imageSize);
+            rtos_printf("\nimageSize: %d\n", imageSize);
             fwrite(&imageSize, 4, 1, imageFile);
 
             // Write resolution (pixels/meter)
@@ -257,27 +262,28 @@ namespace vision
             fwrite(image.image_data->data(), 1, image.image_data->size(), imageFile);
 
             // Image info
-            debug_printf("data offset: %d\n", dataOffset);
-            debug_printf("image columns: %d\n", image.cols());
-            debug_printf("image rows: %d\n", image.rows());
-            debug_printf("image row stride: %d\n", image.row_stride());
-            debug_printf("image channels: %d\n", image.chans());
-            debug_printf("bits per pixel: %d\n", bitsPerPixel);
-            debug_printf("bytes per pixel: %d\n", bytesPerPixel);
-            debug_printf("unpadded row size [bytes]: %d\n", unpaddedRowSize);
-            debug_printf("padded row size [bytes]: %d\n", paddedRowSize);
-            debug_printf("total size of (padded) data [bytes]: %d\n", imageSize);
+            rtos_printf("data offset: %d\n", dataOffset);
+            rtos_printf("image columns: %d\n", image.cols());
+            rtos_printf("image rows: %d\n", image.rows());
+            rtos_printf("image row stride: %d\n", image.row_stride());
+            rtos_printf("image channels: %d\n", image.chans());
+            rtos_printf("bits per pixel: %d\n", bitsPerPixel);
+            rtos_printf("bytes per pixel: %d\n", bytesPerPixel);
+            rtos_printf("unpadded row size [bytes]: %d\n", unpaddedRowSize);
+            rtos_printf("padded row size [bytes]: %d\n", paddedRowSize);
+            rtos_printf("total size of (padded) data [bytes]: %d\n", imageSize);
 
             // Close file
             fclose(imageFile);
-            debug_printf("File %s closed!\n", fileName.c_str());
-            debug_printf("--------------------\n");
+            rtos_printf("File %s closed!\n", fileName.c_str());
+            rtos_printf("--------------------\n");
         }
         else // file couldn't be opened
         {
-            debug_printf("File %s CANNOT be opened!\n", fileName.c_str());
-            debug_printf("--------------------\n");
-        }
+            rtos_printf("File %s CANNOT be opened!\n", fileName.c_str());
+            rtos_printf("--------------------\n");
+        }*/
+        free(buffer);
     }
 
 } // end namespace

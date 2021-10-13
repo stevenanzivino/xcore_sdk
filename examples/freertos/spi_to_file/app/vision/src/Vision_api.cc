@@ -11,55 +11,40 @@
 
 #if ON_TILE(0)
 
-#include <iostream>
-#include <cstring>
+//#include <iostream>
+#include <string>
 #include <limits>
 #include "Image.h"
 #include "vision.h"
 
-//extern "C" void* CreateImage(uint8_t*, int,int,int);
-//extern "C" void WriteToDirectory(void*,char*);
 extern "C" void ArrayToFile(uint8_t*, int, int, int, char*);
 
-/*
-void* CreateImage(uint8_t* DataPtr,int width,int height,int channels){
-    //vision::Image my_image(width,height,channels);
-    std::cout << "This has reached CreateImage Function" << std::endl;
-    vision::Image* my_image;
-    my_image = new vision::Image(width,height,channels);
-    //Fill my_image vector with data from dataptr
-
-
-    return(my_image);
-
-}
-
-void WriteToDirectory(void*,char*){
-    /*
-    Realize the void* as an image.
-    Realize the Char* as a filepath
-    write_bitmap(filepath,image);
-    //*/
-/*/
-}
-//*/
 void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* filepath){
-    /*
-    std::cout << "This has reached ArrayToFile Function" << std::endl;
+    
+    //std::cout << "This has reached ArrayToFile Function" << std::endl;
 
     vision::Image my_image(width,height,channels);
     
-    //Note image_data is signed.
-    for(int i = 0; i < sizeof(DataPtr); i++){
-        int ResignedData = DataPtr[i] - std::numeric_limits<vision::sample_t>::max();
-        my_image.image_data->at(i) = ResignedData;
+    if(std::numeric_limits<vision::sample_t>::max() == 127){
+        //Data comes in unsigned and has to end up signed.
+        for(int i = 0; i < width*height*channels; i++){
+            int ResignedData = DataPtr[i];
+            ResignedData -= std::numeric_limits<vision::sample_t>::max();
+            my_image.image_data->at(i) = ResignedData;
+        }
+    }
+    else{
+        for(int i = 0; i < width*height*channels; i++){
+            my_image.image_data->at(i) = DataPtr[i];
+        }
     }
 
-    std::string stringpath(filepath);
-    std::cout << "Recieved Filepath: " << stringpath << std::endl;
+    my_image.print();
     
-    write_bitmap(stringpath, my_image, 1);
-    */
+    std::string stringpath = filepath;
+
+    write_bitmap(stringpath, my_image, 0);
+
 }
 
 #endif //On_Tile(0)

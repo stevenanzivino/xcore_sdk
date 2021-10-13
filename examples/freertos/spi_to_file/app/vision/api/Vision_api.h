@@ -24,10 +24,13 @@ void printImage(void* imagePTR){
     WriteToDirectory(imagePTR, "/FILEPATH/HERE.txt");
 }
 */
+/*
 writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingpath){
     int firstcall = 1;
 
     
+    //ArrayToFile()
+
     while(1){
         if(firstcall){
             ArrayToFile(DataPtr,width,height,channels,writingpath);
@@ -36,6 +39,7 @@ writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingp
     }
     
 }
+*/
 //Should probably have some Destroy image function, since another one creates it.
 
 void Vision_API_Void(){

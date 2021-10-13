@@ -27,6 +27,13 @@ void lib_vision_task(void *args){
   uint8_t *img_buf = NULL;
   uint8_t final_img_buf[IMAGE_SIZE];
   //int input_tensor_len;
+
+  //Image writing variables:
+  int width = 99;
+  int height = 99;
+  int channels = 1;
+  //char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
+  char Filepath[] = "./images/output_image.bmp";
 /*
 In a loop, wait for communciations.
 Format communcation into an array.
@@ -34,15 +41,11 @@ Define all constants into correct format for the api call
 make call
 repeat loop
 */
-  //char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
   /*
   rtos_printf("\nInitialized Lib_vision Variables");*/
   rtos_printf("\n Reached LibVision Thread Loop");
   while(1){
-    //rtos_printf("\n Vision waiting for image...");
-    //Get Communications here, uh somehow.
-    //rtos_printf("Wait for next image...\n");
-    //xQueueReceive(q, &img_buf, portMAX_DELAY);                  //Recieves image ptr*/
+
     rtos_printf("\nVision Wait for input tensor...");
     //rtos_printf("\nVision adr: intertile_ctx: %d, port: %d",adr->intertile_ctx,adr->port);
     xQueueReceive(q, &img_buf, portMAX_DELAY);
@@ -56,12 +59,9 @@ repeat loop
     }
     vPortFree(img_buf);//*/
 
-
-
-    //vPortFree(img_buf);
-    Vision_API_Void();
-    rtos_printf("\nVision called void");
-    //rtos_printf("\n Vision recieved image.");
+    rtos_printf("\nVision Printing Image");
+    ArrayToFile(img_buf,width,height,channels,Filepath);
+    rtos_printf("\nVision Moving to next image");
   }
   
   rtos_printf("\nCalling Get Image Pointer Here:");
@@ -109,6 +109,8 @@ void lib_vision_task_create(unsigned priority,QueueHandle_t input_queueA,QueueHa
   //args->intertile_addr = intertile_addr;
   args->input_queueA = input_queueA;
   args->input_queueB = input_queueB;
+
+  rtos_printf("lib visition task stack is %u\n",RTOS_THREAD_STACK_SIZE(lib_vision_task));
 
   xTaskCreate((TaskFunction_t)lib_vision_task, "lib_vision_task",
           RTOS_THREAD_STACK_SIZE(lib_vision_task), args, priority,

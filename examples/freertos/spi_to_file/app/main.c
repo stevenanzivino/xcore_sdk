@@ -76,9 +76,6 @@ void vApplicationDaemonTaskStartup(void *arg)
 
     person_detect_addr->intertile_ctx = intertile_ctx;
     person_detect_addr->port = PERSON_DETECT_PORT;
-
-    //lib_vision_addr->intertile_ctx = intertile_ctx;
-    //lib_vision_addr->port = 15; //I dont know how many ports there are, or how to determine if they are already utilized.
     
 
     #if ON_TILE(0)
@@ -111,7 +108,7 @@ void vApplicationDaemonTaskStartup(void *arg)
         int stackSize = RTOS_THREAD_STACK_SIZE(lib_vision_task_create);
         rtos_printf("vision task stack is %u\n",RTOS_THREAD_STACK_SIZE(lib_vision_task_create));
         rtos_printf("My Stacksize: " + stackSize);
-        lib_vision_task_create(appconfPERSON_DETECT_TASK_PRIORITY,qcam2visionA,qcam2visionB/* any more variables that are necessary for creating the task.*/);
+        lib_vision_task_create(appconfVISION_TASK_PRIORITY,qcam2visionA,qcam2visionB/* any more variables that are necessary for creating the task.*/);
     }
     #endif
 

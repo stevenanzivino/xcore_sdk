@@ -71,7 +71,7 @@ if(${USE_EXTMEM})
 endif()
 
 ## Set any additional flags only for C++
-set(CMAKE_CXX_FLAGS  "-std=c++11")
+set(CMAKE_CXX_FLAGS  "-std=c++14")
 
 if(DEFINED THIS_XCORE_TILE)
     set(TARGET_NAME "${PROJECT_NAME}_${THIS_XCORE_TILE}.xe")

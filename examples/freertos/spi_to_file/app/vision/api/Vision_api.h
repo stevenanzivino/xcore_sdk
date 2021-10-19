@@ -11,36 +11,9 @@
 #include <stdint.h>
 
 #if ON_TILE(0)
-//void* CreateImage(uint8_t*, int,int,int);
-//void WriteToDirectory(void*,char*);
+
 void ArrayToFile(uint8_t*, int, int, int, char*);
 
-/*
-void* GetImagePointer(uint8_t* DataPtr, int width, int height, int channels){
-    return(CreateImage(DataPtr, width, height, channels));
-}
-
-void printImage(void* imagePTR){
-    WriteToDirectory(imagePTR, "/FILEPATH/HERE.txt");
-}
-*/
-/*
-writeImage(uint8_t* DataPtr, int width, int height, int channels, char* writingpath){
-    int firstcall = 1;
-
-    
-    //ArrayToFile()
-
-    while(1){
-        if(firstcall){
-            ArrayToFile(DataPtr,width,height,channels,writingpath);
-            firstcall = 0;
-        }
-    }
-    
-}
-*/
-//Should probably have some Destroy image function, since another one creates it.
 
 void Vision_API_Void(){
 

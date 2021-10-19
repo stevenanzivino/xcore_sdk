@@ -16,7 +16,13 @@ extern "C"
 #include "vision.h"
 //#include "file_utils.cc" //Added due to inability to find filp and pad functions
 #include "vision_utils.hpp"
+
+//FreeRtos Headers
 #include "FreeRTOS.h"
+//#include <platform.h>
+#include "rtos/osal/api/rtos_osal.h"
+//#include "header_file.h"
+
 
 #define DATA_OFFSET_OFFSET 0x000A
 #define WIDTH_OFFSET 0x0012
@@ -28,6 +34,10 @@ extern "C"
 #define NO_COMPRESION 0
 #define MAX_NUMBER_OF_COLORS 0
 #define ALL_COLORS_REQUIRED 0
+
+//persondetect
+#define portDISABLE_INTERRUPTS() rtos_interrupt_mask_all();
+#define portENABLE_INTERRUPTS() rtos_interrupt_unmask_all();
 
 namespace vision
 {
@@ -155,15 +165,17 @@ namespace vision
         }
         // Open the file for reading in binary mode
         rtos_printf("\n--------------------+++++++++++");
-        char* buffer = (char*) malloc (10000);
-        buffer[9999] = 'a';
-        FILE *imageFile = fopen(fileName.c_str(), "wb");
+        //char* buffer = (char*) malloc (10000);
+        //buffer[9999] = 'a';
+        portDISABLE_INTERRUPTS()
+        //int state = rtos_osal_critical_enter();
+        FILE *imageFile = NULL;//fopen(fileName.c_str(), "wb");
         
 
         rtos_printf("\n--------------------");
         rtos_printf("\nWriting to file...");
-
-        /*if (imageFile != NULL) // file was opened successfully
+        //*
+        if (imageFile != NULL) // file was opened successfully
         {
             // TODO figure out how to make an 8-bit bitmap!
             if (image.chans() == 1)
@@ -282,8 +294,10 @@ namespace vision
         {
             rtos_printf("File %s CANNOT be opened!\n", fileName.c_str());
             rtos_printf("--------------------\n");
-        }*/
-        free(buffer);
+        }//*/
+        //free(buffer);
+        //rtos_osal_critical_exit(state);
+        portENABLE_INTERRUPTS()
     }
 
 } // end namespace

@@ -9,24 +9,18 @@
 #include "Lib_vision_task.h"
 #include "Vision_api.h"
 
-#define IMAGE_SIZE (96 * 96) //This is also defined in person_detect_task, and must be equal to it.
+#define IMAGE_SIZE (96 * 96) //This is also defined in person_detect_task, and must be equivalent.
 
 typedef struct Lib_vision_args_t{
         QueueHandle_t input_queueA;
         QueueHandle_t input_queueB;
-        //rtos_intertile_address_t *intertile_addr;
-        //rtos_gpio_t gpio_ctx;
 }lib_vision_args_t;
-
-//This file is a lib_vision copy of vision_api
 
 void lib_vision_task(void *args){
   lib_vision_args_t *targs = (lib_vision_args_t *)args;
   QueueHandle_t q = targs->input_queueB;
-  //rtos_intertile_address_t *adr = targs->intertile_addr;
   uint8_t *img_buf = NULL;
   uint8_t final_img_buf[IMAGE_SIZE];
-  //int input_tensor_len;
 
   //Image writing variables:
   int width = 99;
@@ -34,13 +28,7 @@ void lib_vision_task(void *args){
   int channels = 1;
   //char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
   char Filepath[] = "./images/output_image.bmp";
-/*
-In a loop, wait for communciations.
-Format communcation into an array.
-Define all constants into correct format for the api call
-make call
-repeat loop
-*/
+
   /*
   rtos_printf("\nInitialized Lib_vision Variables");*/
   rtos_printf("\n Reached LibVision Thread Loop");
@@ -77,7 +65,6 @@ static void lib_vision_runner_rx(void *args) {
   lib_vision_args_t *targs = (lib_vision_args_t *)args;
   QueueHandle_t q_A = targs->input_queueA;
   QueueHandle_t q_B = targs->input_queueB;
-  //rtos_intertile_address_t *adr = targs->intertile_addr;
   uint8_t *input_tensor;
   int input_tensor_len;
 //*/
@@ -89,7 +76,6 @@ static void lib_vision_runner_rx(void *args) {
     rtos_printf("\nV_rx recieved: %d,%d,%d",input_tensor[0],input_tensor[1],input_tensor[2]);
     //
     rtos_printf("\nV_rx sending input tensor..."); 
-    //xQueueReceive(q_B, &input_tensor, portMAX_DELAY);
     if( xQueueSend( q_B, &input_tensor, pdMS_TO_TICKS( 1 ) ) == errQUEUE_FULL ){     //FreeRTOS memory management?
         debug_printf( "Camera frame lost\n" );
         vPortFree( input_tensor );
@@ -106,7 +92,6 @@ void lib_vision_task_create(unsigned priority,QueueHandle_t input_queueA,QueueHa
 
   configASSERT(args);
 
-  //args->intertile_addr = intertile_addr;
   args->input_queueA = input_queueA;
   args->input_queueB = input_queueB;
 

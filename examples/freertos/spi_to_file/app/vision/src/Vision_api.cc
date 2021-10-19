@@ -20,8 +20,6 @@
 extern "C" void ArrayToFile(uint8_t*, int, int, int, char*);
 
 void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* filepath){
-    
-    //std::cout << "This has reached ArrayToFile Function" << std::endl;
 
     vision::Image my_image(width,height,channels);
     

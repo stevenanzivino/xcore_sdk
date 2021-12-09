@@ -9,7 +9,7 @@
 #include <platform.h>
 
 
-#if ON_TILE(0)
+//#if ON_TILE(0)
 
 //#include <iostream>
 #include <string>
@@ -45,4 +45,4 @@ void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* fi
 
 }
 
-#endif //On_Tile(0)
+//#endif //On_Tile(0)

@@ -158,6 +158,8 @@ namespace vision
     // pixels: A pointer to a byte array. This will contain the .bmp pixel data
     void write_bitmap(const std::string fileName, Image &image, const int debug_mode)
     {
+        #define SETSR(c) asm volatile("setsr %0" : : "n"(c));
+        #define CLRSR(c) asm volatile("clrsr %0" : : "n"(c));
         if (image.chans() > 4)
         {
             rtos_printf("\nMore than 4 channels detected!\n");
@@ -167,10 +169,10 @@ namespace vision
         rtos_printf("\n--------------------+++++++++++");
         //char* buffer = (char*) malloc (10000);
         //buffer[9999] = 'a';
-        portDISABLE_INTERRUPTS()
+        portDISABLE_INTERRUPTS();
+        CLRSR(XS1_SR_KEDI_MASK);
         //int state = rtos_osal_critical_enter();
-        FILE *imageFile = NULL;//fopen(fileName.c_str(), "wb");
-        
+        FILE *imageFile = fopen(fileName.c_str(), "wb");
 
         rtos_printf("\n--------------------");
         rtos_printf("\nWriting to file...");
@@ -190,6 +192,7 @@ namespace vision
             // Write signature ("BM")
             const char *signature = "BM";
             fwrite(&signature[0], 1, 1, imageFile);
+            rtos_printf("Print after first Fwrite\n");
             fwrite(&signature[1], 1, 1, imageFile);
 
             // Write file size
@@ -208,7 +211,7 @@ namespace vision
             // Write data offset
             uint32 dataOffset = HEADER_SIZE + DIB_HEADER_SIZE;
             fwrite(&dataOffset, 4, 1, imageFile);
-
+            rtos_printf("Print after first Fwrite\n");
             // ** DIB header (mandatory) ** //
             // Write DIB header size
             uint32 DIBHeaderSize = DIB_HEADER_SIZE;
@@ -225,7 +228,7 @@ namespace vision
             // Write planes
             uint32 planes = 1; // always 1
             fwrite(&planes, 2, 1, imageFile);
-
+            rtos_printf("Print after first Fwrite\n");
             // Write bits per pixel
             uint32 bitsPerPixel = bytesPerPixel * 8;
             fwrite(&bitsPerPixel, 2, 1, imageFile);
@@ -252,27 +255,32 @@ namespace vision
             uint32 resolutionY = 11811; // 300 dpi
             fwrite(&resolutionX, 4, 1, imageFile);
             fwrite(&resolutionY, 4, 1, imageFile);
-
+            rtos_printf("Print after first Fwrite\n");
+            rtos_printf("Print after first Fwrite 2\n");
             // Write colours in colour table
             uint32 colourTable = MAX_NUMBER_OF_COLORS;
             fwrite(&colourTable, 4, 1, imageFile);
-
+            rtos_printf("Print after first Fwrite 2\n");
             // Write important colour count
             uint32 importantColours = ALL_COLORS_REQUIRED;
             fwrite(&importantColours, 4, 1, imageFile);
-
+            rtos_printf("Print after first Fwrite 2\n");
             // Make unsigned
             for (auto &s : *image.image_data)
             {
                 s = (sample_t)sample_to_index(s);
             }
-
+            rtos_printf("Print after first Fwrite 2\n");
             // ** Pixel array (mandatory) ** //
             // write data from image->pix starting from the end (last row)
+            rtos_printf("Print after first Fwrite 3\n");
             flip(image, ROW);
-            horizontal_pad(image, 0, paddedRowSize - image.row_stride(), 0);
+            rtos_printf("Print after first Fwrite 3\n");
+            //horizontal_pad(image, 0, paddedRowSize - image.row_stride(), 0);
+            rtos_printf("Print after first Fwrite 3\n");
             fwrite(image.image_data->data(), 1, image.image_data->size(), imageFile);
-
+            rtos_printf("Print after first Fwrite\n");
+            rtos_printf("Print after first Fwrite 2\n");
             // Image info
             rtos_printf("data offset: %d\n", dataOffset);
             rtos_printf("image columns: %d\n", image.cols());
@@ -297,6 +305,7 @@ namespace vision
         }//*/
         //free(buffer);
         //rtos_osal_critical_exit(state);
+        SETSR(XS1_SR_KEDI_MASK);
         portENABLE_INTERRUPTS()
     }
 

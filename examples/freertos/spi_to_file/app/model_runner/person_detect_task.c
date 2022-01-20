@@ -68,7 +68,6 @@ static void person_detect_app_task(void *args) {
         ai_img_buf[i >> 1] = img_buf[i];
       }
     }
-    vPortFree(img_buf);
 
 #ifdef OUTPUT_IMAGE_STREAM
     taskENTER_CRITICAL();
@@ -77,27 +76,6 @@ static void person_detect_app_task(void *args) {
     }
     taskEXIT_CRITICAL();
 #endif
-
-  /**Highjack ai_img_buf[]
-   * 
-   * Write the array to the vector
-   * 
-   * for(int i = 0; i < IMAGE_SIZE; i++){ //or possibly that itterator thing.
-   * image.vector.at(i) = ai_img_buf[i]
-   * }
-   * 
-   * 
-   * //write_bitmap("testout.bmp", my_image, 1);
-   * 
-   **/
-  //writeImage(ai_image_buf,96,96,1);
-  // char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
-  // rtos_printf("\nCalling Get Image Pointer Here:");
-  // //void* imagePTR = GetImagePointer(ai_img_buf,96,96,1);
-  // writeImage(ai_img_buf,96,96,1, Filepath);
-  // rtos_printf("\nEnd Call to Get Image Pointer:");
-  // //printImage(imagePTR);
-  // rtos_printf("\n");
 
     rtos_intertile_tx(adr->intertile_ctx, adr->port, ai_img_buf, IMAGE_SIZE);
 

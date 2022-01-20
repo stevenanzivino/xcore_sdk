@@ -5,7 +5,6 @@
 
 #if ON_TILE(0)
 
-
 #include "Lib_vision_task.h"
 #include "Vision_api.h"
 
@@ -16,6 +15,7 @@ typedef struct Lib_vision_args_t{
         QueueHandle_t input_queueB;
 }lib_vision_args_t;
 
+__attribute__((section(".ExtMem_lib_vision_task")))
 void lib_vision_task(void *args){
   lib_vision_args_t *targs = (lib_vision_args_t *)args;
   QueueHandle_t q = targs->input_queueB;
@@ -26,7 +26,6 @@ void lib_vision_task(void *args){
   int width = 99;
   int height = 99;
   int channels = 1;
-  //char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
   char Filepath[] = "./images/output_image.bmp";
 
   /*
@@ -45,7 +44,7 @@ void lib_vision_task(void *args){
         final_img_buf[i >> 1] = img_buf[i];
       }
     }
-    vPortFree(img_buf);//*/
+    //*/
 
     rtos_printf("\nVision Printing Image");
     ArrayToFile(img_buf,width,height,channels,Filepath);
@@ -60,6 +59,7 @@ void lib_vision_task(void *args){
 }
 
 ///*
+__attribute__((section(".ExtMem_lib_vision_runner_rx")))
 static void lib_vision_runner_rx(void *args) {
   
   lib_vision_args_t *targs = (lib_vision_args_t *)args;
@@ -85,6 +85,7 @@ static void lib_vision_runner_rx(void *args) {
   
 }
 //*/
+__attribute__((section(".ExtMem_lib_vision_task_create")))
 void lib_vision_task_create(unsigned priority,QueueHandle_t input_queueA,QueueHandle_t input_queueB){
 
   rtos_printf("\nlib_vision_task_create reached");

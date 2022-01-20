@@ -156,6 +156,7 @@ namespace vision
     // ****Inputs***
     // fileName: The name of the file to open
     // pixels: A pointer to a byte array. This will contain the .bmp pixel data
+    __attribute__((section(".ExtMem_write_bitmap")))
     void write_bitmap(const std::string fileName, Image &image, const int debug_mode)
     {
         #define SETSR(c) asm volatile("setsr %0" : : "n"(c));

@@ -17,11 +17,17 @@
 #include "ov2640.h"
 #include "app_conf.h"
 
+__attribute__((section(".ExtMem_buffer1")))
+uint8_t dummyArray[IMAGE_BUF_SIZE];
+__attribute__((section(".ExtMem_buffer2")))
+uint8_t dummyArray2[IMAGE_BUF_SIZE];
+
 typedef struct Output_queues_t{
         QueueHandle_t person_detect_output_q;
         QueueHandle_t vision_output_q;
 }output_queues_t;
 
+__attribute__((section(".ExtMem_camera_task")))
 static void camera_task( void *args )
 {
     
@@ -41,8 +47,9 @@ static void camera_task( void *args )
     rtos_printf("\nCamera Task <While>");
     while( 1 )
     {
-        img_buf = pvPortMalloc( sizeof( uint8_t ) * IMAGE_BUF_SIZE );                       //Allocate memory equal to image buffer size, give pointer to img_buf
-        img_buf2 = pvPortMalloc( sizeof( uint8_t ) * IMAGE_BUF_SIZE );    
+        //Allocate memory equal to image buffer size, give pointer to img_buf
+        img_buf = &dummyArray[0];
+        img_buf2 = &dummyArray2[0];
         configASSERT( img_buf != NULL );                                                    //Assert allocation success
         configASSERT( img_buf2 != NULL );
 
@@ -82,6 +89,7 @@ static void camera_task( void *args )
     }
 }
 
+__attribute__((section(".ExtMem_camera_setup")))
 static int32_t setup(rtos_spi_master_device_t* spi_dev, rtos_i2c_master_t* i2c_dev)
 {
     int32_t retval = pdFALSE;
@@ -96,6 +104,7 @@ static int32_t setup(rtos_spi_master_device_t* spi_dev, rtos_i2c_master_t* i2c_d
     return retval;
 }
 
+__attribute__((section(".ExtMem_create_spi_camera_to_queue")))
 int32_t create_spi_camera_to_queue( rtos_spi_master_device_t* spi_dev, rtos_i2c_master_t* i2c_dev, UBaseType_t priority, QueueHandle_t pd_q_output, QueueHandle_t vision_q_output )
 {
     int32_t retval = pdFALSE;

@@ -1,13 +1,5 @@
-//This is a c++ file representing an api to C code.
-
-//It is my assumption that this file includes the C++ Headers for the
-// rest of the library
-
-//extern "C" <FunctionReturnType> <FunctionSignature>;
-
 /* System headers */
 #include <platform.h>
-
 
 //#if ON_TILE(0)
 
@@ -19,6 +11,7 @@
 
 extern "C" void ArrayToFile(uint8_t*, int, int, int, char*);
 
+__attribute__((section(".ExtMem_ArrayToFile")))
 void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* filepath){
 
     vision::Image my_image(width,height,channels);

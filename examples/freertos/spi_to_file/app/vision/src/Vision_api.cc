@@ -23,21 +23,28 @@ void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* fi
 
     vision::Image my_image(width,height,channels);
     
-    if(std::numeric_limits<vision::sample_t>::max() == 127){
+    /*
+    if(std::numeric_limits<vision::sample_t>::max() == 127){ //vision.h typedef
         //Data comes in unsigned and has to end up signed.
         for(int i = 0; i < width*height*channels; i++){
             int ResignedData = DataPtr[i];
             ResignedData -= std::numeric_limits<vision::sample_t>::max();
-            my_image.image_data->at(i) = ResignedData;
+            my_image.image_data->at(i) = 256; //ResignedData; //<--- It uses this one
         }
     }
     else{
         for(int i = 0; i < width*height*channels; i++){
-            my_image.image_data->at(i) = DataPtr[i];
+            my_image.image_data->at(i) = 0x00;//DataPtr[i];
         }
+    }*/
+
+    for(int i = 0; i < width*height*channels; i++){
+        my_image.image_data->at(i) = DataPtr[i];
     }
 
     my_image.print();
+    printf("Value of %d for values in the image.\n",my_image.image_data->at(1)); //Signed decimal int
+    printf("Value of %X for values in the image.\n",my_image.image_data->at(1)); //Unsigned hex int
     
     std::string stringpath = filepath;
 

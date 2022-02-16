@@ -1,7 +1,11 @@
-#include <algorithm> // rotate()
-#include <cassert>   // assert()
-#include <cstring>   // memmove()
-#include <math.h>    // round()
+#include <cassert> // assert()
+#include <cstring> // memmove()
+#include <math.h>  // round()
+#include <cmath>   // trunc()
+#include <iostream>
+#include <limits>
+#include <algorithm> // std::min
+#include <stdint.h> //uint8_t
 
 #include "Image.h"
 #include "vision.h"
@@ -94,6 +98,34 @@ namespace vision
 #endif
   }
 
+  // bankers' rounding
+  int bround(float x)
+  {
+    int out;
+    if (x - std::trunc(x) == .5 || x - std::trunc(x) == -.5)
+    {
+      out = round(x / 2) * 2;
+    }
+    else
+    {
+      out = round(x);
+    }
+    return out;
+  }
+  // odd bankers' rounding
+  int obround(float x)
+  {
+    int out;
+    if (x - std::trunc(x) == .5 || x - std::trunc(x) == -.5)
+    {
+      out = floor(x / 2) * 2 + 1;
+    }
+    else
+    {
+      out = round(x);
+    }
+    return out;
+  }
   // debayer input image stream
   int debayer_stream(sample_t *buffer, const int buf_len, const int row_len, const int current_row, const Method method)
   {
@@ -117,64 +149,117 @@ namespace vision
   void crop(Image &image, const Region &selection)
   {
     assert(image.is_valid(selection));
-
-    std::rotate(image.image_data->begin(),
-                image.image_data->begin() + image.get_sample_ind(selection.top_left),
-                image.image_data->end());
     int len = selection.extents.col * image.col_stride();
-    int skip = image.row_stride() - len; // if rows are padded crop will remove
-    assert(skip >= 0);
-    for (int i = 1; i < selection.extents.row; i++)
+
+    for (int i = 0; i < selection.extents.row; i++)
     {
-      sample_t *dst = image.image_data->data() + image.get_sample_ind(i, i * len);
-      sample_t *src = image.image_data->data() + image.get_sample_ind(i, i * len + skip);
-      std::memmove(dst, src, len); // probably safe to use memcpy on xcore
+      std::memmove(image.image_data->data() + i * len,
+                   image.get_pixel(selection.top_left.row + i, selection.top_left.col),
+                   len);
     }
+
     // resize image
     image.resize(selection.extents.row, selection.extents.col, image.chans());
   }
 
-  void vertical_pad(Image &image, const int above,const int below,const sample_t value)
+  void vertical_pad(Image &image, std::array<uint8_t, 4> color, const int before, const int after)
   {
-    if (above < 0 || below < 0)
+    // sanity check
+    if (before < 0 || after < 0)
       return;
 
+    // params.
+    std::vector<sample_t> tmp; // tmp row vector used for padding
     auto old_rows = image.rows();
-    auto pad = above + below;
-    image.resize(image.rows()+pad,image.cols(),image.chans());
 
-    //Middle
-    for(int i = old_rows - 1; i >= 0 ; i--){
-      memcpy(image.get_row(i+above),image.get_row(i),image.row_stride());
-    }
-
-    std::vector<sample_t> tmp;
+    // resize
+    image.resize(image.rows() + before + after, image.cols(), image.chans());
     tmp.resize(image.row_stride());
-    memset(tmp.data(), value, tmp.size());
-    //Bottom
-    for(int i = image.rows()-1; i >= old_rows; i--){
-      memcpy(image.get_row(i), tmp.data(),tmp.size());
+
+    // fill tmp vector with same color pixels
+    for (int j = 0; j < image.cols(); j++)
+    {
+      for (int k = 0; k < image.chans(); k++)
+      {
+        tmp.data()[j * image.chans() + k] = index_to_sample(color[k]);
+      }
     }
-    //Top
-    for(int i = above-1; i >=0; i--){
-      memcpy(image.get_row(i), tmp.data(),tmp.size());
+
+    // [bottom]: overwite bottom zero rows with rows of value (moving upwards)
+    for (int i = image.rows() - 1; i >= image.rows() - after; i--)
+    {
+      memcpy(image.get_row(i), tmp.data(), tmp.size());
+    }
+
+    // [middle]: shift old image down (moving upwards)
+    for (int i = old_rows - 1; i >= 0; i--)
+    {
+      memcpy(image.get_row(i + before), image.get_row(i), tmp.size());
+    }
+
+    // [top]: overwrite old image data with rows of value (moving upwards)
+    for (int i = before - 1; i >= 0; i--)
+    {
+      memcpy(image.get_row(i), tmp.data(), tmp.size());
     }
   }
 
-  void horizontal_pad(Image &image, const int pre_bytes, const int post_bytes, char value)
+  void horizontal_pad(Image &image, std::array<uint8_t, 4> color, const int before, const int after)
   {
+    // sanity check
+    if (before < 0 || after < 0)
+      return;
+
+    // params.
+    std::vector<sample_t> tmp; // tmp row vector used for padding
+    auto old_row_stride = image.row_stride();
+    auto old_start = image.get_sample_ind(image.rows() - 1, 0);
+
+    // resize
+    image.resize(image.rows(), image.cols() + before + after, image.chans());
+    tmp.resize(image.row_stride());
+
+    // overwrite rows (moving upwards)
+    for (int i = image.rows() - 1; i >= 0; i--)
+    {
+      for (int j = 0; j < image.cols(); j++)
+      {
+        for (int k = 0; k < image.chans(); k++)
+        {
+          tmp.data()[j * image.chans() + k] = index_to_sample(color[k]);
+        }
+      }
+
+      // update middle tmp data with old row values
+      memcpy(tmp.data() + before * image.chans(), image.image_data->data() + old_start, old_row_stride); // populate new tmp row with before + old_row_stride + after pixels of value
+
+      // update row in image data
+      memcpy(image.get_row(i), tmp.data(), tmp.size());
+
+      // update old start point
+      old_start -= old_row_stride;
+    }
+  }
+
+  void horizontal_byte_pad(Image &image, const int pre_bytes, const int post_bytes, uint8_t value)
+  {
+    // sanity check
     if (pre_bytes < 0 || post_bytes < 0)
       return;
+
+    // params.
+    std::vector<sample_t> tmp; // tmp row vector used for padding
     auto old_chans = image.chans();
     auto old_row_stride = image.row_stride();
     auto start = image.get_sample_ind(image.rows() - 1, 0);
     auto pad = pre_bytes + post_bytes;
 
-    image.resize(image.rows(), image.cols() * image.chans(), 1);   // reshape
-    image.resize(image.rows(), image.cols() + pad, image.chans()); // TODO better handle sub-pixel pads
-    std::vector<sample_t> tmp;                                     // TODO in-place -- though currently this is only used with fileIO
+    // resize
+    image.resize(image.rows(), image.cols() * image.chans(), 1);
+    image.resize(image.rows(), image.cols() + pad, image.chans());
     tmp.resize(image.row_stride());
 
+    // overwrite rows (moving upwards)
     for (int i = image.rows() - 1; i >= 0; i--)
     {
       memset(tmp.data(), value, tmp.size());
@@ -189,65 +274,134 @@ namespace vision
     }
   }
 
-  void channel_pad(Image &image, const int before, const int after)
+  void channel_byte_pad(Image &image, const int before, const int after, const uint8_t value)
   {
+    // sanity check
     if (before < 0 || after < 0)
       return;
+
+    // params.
+    std::vector<sample_t> temp; // tmp row vector used for padding
+    int head = image.image_data->size() - 1;
+
+    // resize
     image.resize(image.rows(), image.cols(), image.chans() + before + after);
+    temp.resize(image.row_stride());
+
+    memset(temp.data(), index_to_sample(value), temp.size());
+
+    for (int i = image.rows() - 1; i >= 0; i--)
+    {
+      for (int j = image.cols() - 1; j >= 0; j--)
+      {
+        // for (int c = before; c < image.chans() - after; c++)
+        for (int c = image.chans() - after - 1; c >= before; c--)
+        {
+          temp[j * image.col_stride() + c] = image.image_data->at(head--);
+        }
+      }
+      memcpy(image.get_row(i), temp.data(), temp.size());
+    }
   }
 
-  std::vector<RowCol> find_contour(Image &image, const unsigned char difference /*, Region*/)
+  void find_contour(Image &image, const uint8_t threshold, std::vector<RowCol> &points)
   {
     RowCol point;
-    std::vector<RowCol> points;
+    int value;
 
-    //horizontal set
-    for (int i = 1; i < image.rows() - 1; i++)
+    // horizontal set
+    for (int i = 0; i < image.rows(); i++)
     {
-      for (int j = 1; j < image.cols() - 2; j++)
+      for (int j = 0; j < image.cols(); j++)
       {
-        //char has size 0-255
-        int value1 = -1 * *image.get_pixel(i - 1, j - 1) + 1 * *image.get_pixel(i - 1, j + 1) - 2 * *image.get_pixel(i, j - 1) + 2 * *image.get_pixel(i, j + 1) - 1 * *image.get_pixel(i + 1, j - 1) + 1 * *image.get_pixel(i + 1, j + 1);
-
-        int value2 = -1 * *image.get_pixel(i - 1, j) + 1 * *image.get_pixel(i - 1, j + 2) - 2 * *image.get_pixel(i, j) + 2 * *image.get_pixel(i, j + 2) - 1 * *image.get_pixel(i + 1, j) + 1 * *image.get_pixel(i + 1, j + 2);
-        // ^ with some algebra a bunch of these terms can probably be grouped / go away
-        if (vision::abs(value1 - value2) > difference)
+        // check points on the left of the image
+        if (j == 0)
         {
-          point.row = i;
-          point.col = j;
-          points.push_back(point);
+          value = *image.get_pixel(i, j);
+          if (vision::abs(value) > threshold)
+          {
+            point.row = i;
+            point.col = j;
+            points.push_back(point);
+          }
+        }
+        else if (j == image.cols() - 1)
+        {
+          // check points on the right of the image
+          value = *image.get_pixel(i, j);
+          if (vision::abs(value) > threshold)
+          {
+            point.row = i;
+            point.col = j;
+            points.push_back(point);
+          }
+        }
+        else
+        {
+          // make horizontal comparison
+          value = *image.get_pixel(i, j) - *image.get_pixel(i, j - 1);
+          if (vision::abs(value) > threshold)
+          {
+            point.row = i;
+            point.col = j - 1;
+            points.push_back(point);
+          }
         }
       }
     }
-    //Vertical Set //i = y, j = x
-    for (int i = 1; i < image.rows() - 2; i++)
-    {
-      for (int j = 1; j < image.cols() - 1; j++)
-      {
-        int value1 = -1 * *image.get_pixel(i - 1, j - 1) + 1 * *image.get_pixel(i + 1, j - 1) - 2 * *image.get_pixel(i - 1, j) + 2 * *image.get_pixel(i + 1, j) - 1 * *image.get_pixel(i - 1, j + 1) + 1 * *image.get_pixel(i + 1, j + 1);
 
-        int value2 = -1 * *image.get_pixel(i, j - 1) + 1 * *image.get_pixel(i + 2, j - 1) - 2 * *image.get_pixel(i, j) + 2 * *image.get_pixel(i + 2, j) - 1 * *image.get_pixel(i, j + 1) + 1 * *image.get_pixel(i + 2, j + 1);
-        if (vision::abs(value1 - value2) > difference)
+    // vertical set
+    for (int i = 0; i < image.rows(); i++)
+    {
+      for (int j = 0; j < image.cols(); j++)
+      {
+        // check points on the top of the image
+        if (i == 0)
         {
-          //Consider adding a check if point is already in vector
-          point.row = i;
-          point.col = j;
-          points.push_back(point);
+          value = *image.get_pixel(i, j);
+          if (vision::abs(value) > threshold)
+          {
+            point.row = i;
+            point.col = j;
+            points.push_back(point);
+          }
+        }
+        // check points on the bottom of the image.
+        else if (i == image.rows() - 1)
+        {
+          value = *image.get_pixel(i, j);
+          if (vision::abs(value) > threshold)
+          {
+            point.row = i;
+            point.col = j;
+            points.push_back(point);
+          }
+        }
+        else
+        {
+          // make vertical comparison
+          value = *image.get_pixel(i, j) - *image.get_pixel(i - 1, j);
+          if (vision::abs(value) > threshold)
+          {
+            point.row = i - 1;
+            point.col = j;
+            points.push_back(point);
+          }
         }
       }
     }
-    return points;
   }
 
-  void get_bounding_box(const std::vector<RowCol> points)
+  void get_bounding_box(Region &box, const std::vector<RowCol> points)
   {
 
     if (points.empty())
     {
-      //thow exception or error
+      // throw exception or error
       return;
     }
 
+    // calculate box limits
     unsigned rowMax = points[0].row, rowMin = points[0].row;
     unsigned colMax = points[0].col, colMin = points[0].col;
     for (const auto &i : points)
@@ -271,46 +425,96 @@ namespace vision
       }
     }
 
-    Region box;
+    // update box properties
     box.top_left.col = colMin;
     box.top_left.row = rowMin;
     box.extents.col = 1 + colMax - colMin;
     box.extents.row = 1 + rowMax - rowMin;
 
-    debug_printf("get_bounding_box: %d,%d|%d,%d\n", box.top_left.col, box.top_left.row,
-                 box.extents.col, box.extents.col);
+    // pretty print to screen
+    debug_printf("get_bounding_box: row #%d, col #%d | height #%d, width #%d\n", box.top_left.row, box.top_left.col,
+                 box.extents.row, box.extents.col);
 
     return;
   }
 
-  void to_grayscale(Image &image, const std::vector<float> *weights)
+  void bgr2gray(Image &image)
   {
-    std::vector<float> w;
-
-    if (weights->empty() || weights->size() != image.chans())
+    std::vector<float> weights{0.114f, 0.5870f, 0.299f};
+    if (image.color() == BGR)
     {
-      for (w.push_back(1.0f / image.chans()); w.size() < image.chans(); /**/)
-        ;
-    }
-    else
-    {
-      w = *weights;
-    }
-
-    for (int i = 0; i < image.image_data->size(); i += image.chans())
-    {
-      // less ugly if image_data were a concrete member
-      float tmp = 0.0f;
-      for (int j = 0; j < image.chans(); j++)
+      for (int i = 0; i < image.image_data->size(); i += image.chans())
       {
-        tmp += image.image_data->operator[](i + j) * w[j];
+        float tmp = 0.0f;
+        for (int j = 0; j < image.chans(); j++)
+        {
+          tmp += image.image_data->operator[](i + j) * weights[j];
+        }
+
+        image.image_data->operator[](i / image.chans()) = (sample_t)(bround(tmp));
       }
 
-      // todo use an iterator below:
-      image.image_data->operator[](i / image.chans()) = (sample_t)(round(tmp));
+      image.resize(image.rows(), image.cols(), 1);
+      image.set_colorspace(GRAY);
     }
+  }
 
-    image.resize(image.rows(), image.cols(), 1);
+  void bgr2bgra(Image &image, const uint8_t value)
+  {
+    if (image.color() == BGR)
+    {
+      channel_byte_pad(image, 0, 1, value);
+      image.set_colorspace(BGRA);
+    }
+  }
+
+  void bgr2yuv(Image &image)
+  {
+    // [NVIDIA implementation]: https://docs.nvidia.com/cuda/npp/group__rgbtoyuv.html
+    std::vector<float> weights{0.114f, 0.5870f, 0.299f};
+    float y, u, v;
+
+    if (image.color() == BGR)
+    {
+      for (int i = 0; i < image.image_data->size() - image.chans() + 1; i += image.chans())
+      {
+        y = 0.0f;
+
+        for (int j = 0; j < image.chans(); j++)
+        {
+          y += sample_to_index(image.image_data->operator[](i + j)) * weights[j];
+        }
+        u = (sample_to_index(image.image_data->operator[](i)) - y) * 0.492f;
+        v = (sample_to_index(image.image_data->operator[](i + 2)) - y) * 0.877f;
+
+        image.image_data->operator[](i) = index_to_sample(bround(y));
+        image.image_data->operator[](i + 1) = index_to_sample((int)clamp<uint8_t>(bround(u) + 128));
+        image.image_data->operator[](i + 2) = index_to_sample((int)clamp<uint8_t>(bround(v) + 128));
+      }
+      image.set_colorspace(YUV);
+    }
+  }
+
+  void yuv2bgr(Image &image)
+  {
+    // [NVIDIA implementation]: https://docs.nvidia.com/cuda/npp/group__yuvtorgb.html
+    float b, g, r;
+
+    if (image.color() == YUV)
+    {
+      std::cout << "YUV" << std::endl;
+      for (int i = 0; i < image.image_data->size() - image.chans() + 1; i += image.chans())
+      {
+        b = sample_to_index(image.image_data->operator[](i)) + 2.032f * (sample_to_index(image.image_data->operator[](i + 1)) - 128.0f);
+        g = sample_to_index(image.image_data->operator[](i)) - 0.394f * (sample_to_index(image.image_data->operator[](i + 1)) - 128.0f) - 0.581f * (sample_to_index(image.image_data->operator[](i + 2)) - 128.0f);
+        r = sample_to_index(image.image_data->operator[](i)) + 1.140f * (sample_to_index(image.image_data->operator[](i + 2)) - 128.0f);
+
+        image.image_data->operator[](i) = index_to_sample((int)clamp<uint8_t>(bround(b)));
+        image.image_data->operator[](i + 1) = index_to_sample((int)clamp<uint8_t>(bround(g)));
+        image.image_data->operator[](i + 2) = index_to_sample((int)clamp<uint8_t>(bround(r)));
+      }
+      image.set_colorspace(BGR);
+    }
   }
 
   void flip(Image &image, const Dimension dim)
@@ -358,7 +562,7 @@ namespace vision
   {
     if (Nbits < 1 || Nbits > 8)
     {
-      //return Error | Nbits == 0 causes an address sanitizer problem
+      // return Error | Nbits == 0 causes an address sanitizer problem
       return;
     }
 
@@ -418,30 +622,53 @@ namespace vision
     }
   }
 
-  void compute_histogram(Image &image, std::vector<unsigned> &h, const unsigned nbins)
+  void hist(const Image &image, std::vector<unsigned> &hist_vec, const unsigned ch, const unsigned nbins)
   {
-    int bin_width = (1 << (8 * sizeof(sample_t))) / nbins;
+    unsigned pixel_value;
+    int hist_bin, bin_width;
+    assert(nbins > 0);
+    bin_width = (int)ceil((float)(std::numeric_limits<sample_t>::max() - std::numeric_limits<sample_t>::min() + 1) / nbins);
 
-    h.resize(image.chans() * nbins);
-    for (auto &e : h)
+    // initialize histogram values with 0
+    for (auto &e : hist_vec)
+    {
       e = 0;
+    }
+
+    // resize histogram to fit nbins
+    hist_vec.resize(nbins);
 
     for (int k = 0; k < image.image_data->size(); k++)
     {
       int c = k % image.chans();
-      int bin = sample_to_index(image.image_data->operator[](k)) / bin_width;
-      h[c * nbins + bin]++;
+      if (c == ch)
+      {
+        // signed -> unsigned pixel value
+        pixel_value = sample_to_index(image.image_data->at(k));
+
+        // find histogram bin to update
+        hist_bin = (int)((float)pixel_value / bin_width);
+
+        // update histogram
+        hist_vec[hist_bin]++;
+      }
     }
   }
 
   void adjust_brightness(Image &image, const sample_t mag)
   {
-    constexpr int min = std::numeric_limits<sample_t>::min();
-    constexpr int max = std::numeric_limits<sample_t>::max();
     for (auto &p : *image.image_data)
     {
-      p = clamp(p + mag, min, max);
+      p = clamp<sample_t>(p + mag);
     }
+  }
+
+  void region2array(const Region &box, std::array<int, 4> &region_array)
+  {
+    region_array[0] = box.top_left.row;
+    region_array[1] = box.top_left.col;
+    region_array[2] = box.extents.row;
+    region_array[3] = box.extents.col;
   }
 
 } // namespace vision

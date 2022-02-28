@@ -26,19 +26,11 @@ void lib_vision_task(void *args){
   int width = 99;
   int height = 99;
   int channels = 1;
-  //char Filepath[] = {'o','u','t','p','u','t','_','i','m','a','g','e','.','b','m','p'};
   char Filepath[] = "./images/output_image.bmp";
 
-  /*
-  rtos_printf("\nInitialized Lib_vision Variables");*/
-  rtos_printf("\n Reached LibVision Thread Loop");
   while(1){
 
-    rtos_printf("\nVision Wait for input tensor...");
-    //rtos_printf("\nVision adr: intertile_ctx: %d, port: %d",adr->intertile_ctx,adr->port);
     xQueueReceive(q, &img_buf, portMAX_DELAY);
-    rtos_printf("\nVision recieved input tensor");
-    //rtos_printf("\nVision_task recieved: %d,%d,%d",img_buf[0],img_buf[1],img_buf[2]);
     /* img_buf[i%2] contains the values we want to print over the api */
     for (int i = 0; i < (IMAGE_SIZE * 2); i++) {
       if ((i % 2)) {
@@ -47,16 +39,10 @@ void lib_vision_task(void *args){
     }
     vPortFree(img_buf);//*/
 
-    rtos_printf("\nVision Printing Image");
-    ArrayToFile(img_buf,width,height,channels,Filepath);
-    rtos_printf("\nVision Moving to next image");
+    //rtos_printf("\nVision Printing Image");
+    ArrayToFile(final_img_buf,width,height,channels,Filepath);
+    //rtos_printf("\nVision Moving to next image");
   }
-  
-  rtos_printf("\nCalling Get Image Pointer Here:");
-  //writeImage(ai_img_buf,96,96,1, Filepath);
-  rtos_printf("\nEnd Call to Get Image Pointer:");
-  rtos_printf("\n");
-
 }
 
 ///*
@@ -74,6 +60,12 @@ static void lib_vision_runner_rx(void *args) {
     rtos_printf("\nV_rx Wait for input tensor...");
     xQueueReceive(q_A, &input_tensor, portMAX_DELAY);
     rtos_printf("\nV_rx recieved: %d,%d,%d",input_tensor[0],input_tensor[1],input_tensor[2]);
+    //
+
+    for(int i = 0; i < 10; i++){
+      rtos_printf("\nBuffer Value: %d", input_tensor[i]);
+    }
+
     //
     rtos_printf("\nV_rx sending input tensor..."); 
     if( xQueueSend( q_B, &input_tensor, pdMS_TO_TICKS( 1 ) ) == errQUEUE_FULL ){     //FreeRTOS memory management?

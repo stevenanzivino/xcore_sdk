@@ -59,9 +59,17 @@ static void camera_task( void *args )
         //OV camera module, 
 
         for(int i = 0; i < IMAGE_BUF_SIZE; i++){                                            //Copy data between buffers
-            img_buf2[i] = 0;//img_buf[i];
+            img_buf2[i] = img_buf[i];
         }
 
+        //rtos_printf("PrintTestA");
+        //debug_printf("PrintTestB");
+
+/*
+        for(int i = 0; i < 10; i++){
+            rtos_printf()img_buf[2]
+        }
+*/
         debug_printf("Arducam -> FreeRTOS done\n");
         rtos_printf("\nCamera task is sending: %d,%d,%d",img_buf[0],img_buf[1],img_buf[2]);
 

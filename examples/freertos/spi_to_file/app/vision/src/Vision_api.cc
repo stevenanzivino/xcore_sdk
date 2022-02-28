@@ -42,12 +42,13 @@ void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* fi
         my_image.image_data->at(i) = DataPtr[i];
     }
 
-    my_image.print();
-    printf("Value of %d for values in the image.\n",my_image.image_data->at(1)); //Signed decimal int
-    printf("Value of %X for values in the image.\n",my_image.image_data->at(1)); //Unsigned hex int
+    //my_image.print();
+    //printf("Value of %d for values in the image.\n",my_image.image_data->at(1)); //Signed decimal int
+    //printf("Value of %X for values in the image.\n",my_image.image_data->at(1)); //Unsigned hex int
     
     std::string stringpath = filepath;
 
+    //dither(my_image, 3);
     write_bitmap(stringpath, my_image, 0);
 
 }

@@ -29,7 +29,6 @@ static void camera_task( void *args )
     QueueHandle_t pd_q = targs->person_detect_output_q;
     QueueHandle_t v_q = targs->vision_output_q;
 
-    //QueueHandle_t output_queue = ( QueueHandle_t ) args;
     uint8_t* img_buf = NULL;
     uint8_t* img_buf2 = NULL;
     uint8_t tx_buf = ARDUCAM_BURST_FIFO_READ;
@@ -41,35 +40,27 @@ static void camera_task( void *args )
     rtos_printf("\nCamera Task <While>");
     while( 1 )
     {
-        img_buf = pvPortMalloc( sizeof( uint8_t ) * IMAGE_BUF_SIZE );                       //Allocate memory equal to image buffer size, give pointer to img_buf
+        img_buf = pvPortMalloc( sizeof( uint8_t ) * IMAGE_BUF_SIZE );
         img_buf2 = pvPortMalloc( sizeof( uint8_t ) * IMAGE_BUF_SIZE );    
-        configASSERT( img_buf != NULL );                                                    //Assert allocation success
+        configASSERT( img_buf != NULL );
         configASSERT( img_buf2 != NULL );
 
         /* Poll until capture is completed */
-        while( !ov2640_capture_done() )                                                     //While the capture is not yet completed
+        while( !ov2640_capture_done() )
         {
-            vTaskDelay( pdMS_TO_TICKS( 1 ) );                                               //Wait one ms and check again.
+            vTaskDelay( pdMS_TO_TICKS( 1 ) );
         }
 
         debug_printf("arducam buffer has %d bytes ready\n", ov2640_read_fifo_length());
         
-        ov2640_spi_read_buf( img_buf, IMAGE_BUF_SIZE, &tx_buf, 1 );                         //Reads a buffer from a location???
+        ov2640_spi_read_buf( img_buf, IMAGE_BUF_SIZE, &tx_buf, 1 );
         //Check the readme, OV2640 is the camera != ARDUCAM.
         //OV camera module, 
 
-        for(int i = 0; i < IMAGE_BUF_SIZE; i++){                                            //Copy data between buffers
+        for(int i = 0; i < IMAGE_BUF_SIZE; i++){
             img_buf2[i] = img_buf[i];
         }
 
-        //rtos_printf("PrintTestA");
-        //debug_printf("PrintTestB");
-
-/*
-        for(int i = 0; i < 10; i++){
-            rtos_printf()img_buf[2]
-        }
-*/
         debug_printf("Arducam -> FreeRTOS done\n");
         rtos_printf("\nCamera task is sending: %d,%d,%d",img_buf[0],img_buf[1],img_buf[2]);
 
@@ -78,12 +69,12 @@ static void camera_task( void *args )
             debug_printf( "Camera frame lost\n" );
             vPortFree( img_buf );
         }
-//*
+
         if( xQueueSend( v_q, &img_buf2, pdMS_TO_TICKS( 1 ) ) == errQUEUE_FULL )     //FreeRTOS memory management?
         {
             debug_printf( "Camera frame lost\n" );
             vPortFree( img_buf2 );
-        }//*/
+        }
 
         ov2640_clear_fifo_flag();
         ov2640_start_capture();

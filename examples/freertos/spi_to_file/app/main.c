@@ -105,10 +105,7 @@ void vApplicationDaemonTaskStartup(void *arg)
         }
 
         rtos_printf("Starting lib vision app task\n");
-        int stackSize = RTOS_THREAD_STACK_SIZE(lib_vision_task_create);
-        rtos_printf("vision task stack is %u\n",RTOS_THREAD_STACK_SIZE(lib_vision_task_create));
-        rtos_printf("My Stacksize: " + stackSize);
-        lib_vision_task_create(appconfVISION_TASK_PRIORITY,qcam2visionA,qcam2visionB/* any more variables that are necessary for creating the task.*/);
+        lib_vision_task_create(appconfVISION_TASK_PRIORITY,qcam2visionA,qcam2visionB);
     }
     #endif
 

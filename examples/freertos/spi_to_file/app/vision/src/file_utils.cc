@@ -48,6 +48,7 @@ namespace vision
     std::unordered_map<Colorspace, std::string> valColorspace{
         {GRAY, "GRAY"},
         {BGR, "BGR"},
+        {BGRA, "BGRA"},
         {RGB, "RGB"},
         {YUV, "YUV"}};
 
@@ -62,7 +63,7 @@ namespace vision
         imageFile = fopen(fileName.c_str(), "rb");
 
         debug_printf("\n--------------------");
-        debug_printf("\nReading from file...");
+        debug_printf("\nReading image from .BMP file...");
 
         if (imageFile != NULL) // file was opened successfully
         {
@@ -93,9 +94,12 @@ namespace vision
             bytesPerPixel = ((uint32)bitsPerPixel) / 8;
 
             // Resize image matrix and set image params., i.e., image.rows, image.cols etc.)
-            image.resize(width, height, bytesPerPixel);
+            image.resize(height, width, bytesPerPixel);
 
-            // Set image colorspace (chans=1 -> GRAY; chans=3 -> BGR)
+            // Set image colorspace
+            // chans=1  -> GRAY
+            // chans=3  and chan1=chan2=chan3 -> GRAY -> TODO: add check
+            // chans=3 -> BGR)
             if (image.chans() == 1)
             {
                 image.set_colorspace(GRAY);
@@ -106,9 +110,9 @@ namespace vision
             }
             else
             {
-            #ifndef NDEBUG
-                //throw std::invalid_argument("Number of channels can only be 1 or 3. Unavailable colorpsace option for other number of channels.");
-            #endif
+#ifndef NDEBUG
+                //throw std::invalid_argument("Number of channels can only be 1 or 3. Unavailable colorspace option for other number of channels.");
+#endif
                 return;
             }
 
@@ -150,7 +154,7 @@ namespace vision
             debug_printf("image rows: %d\n", image.rows());
             debug_printf("image row stride: %d\n", image.row_stride());
             debug_printf("image channels: %d\n", image.chans());
-            debug_printf("image colorspace: %s\n", (valColorspace[image.color()]).c_str());
+            debug_printf("image colorspace: %s\n", (valColorspace[image.get_colorspace()]).c_str());
             debug_printf("bits per pixel: %d\n", bitsPerPixel);
             debug_printf("bytes per pixel: %d\n", bytesPerPixel);
             debug_printf("unpadded row size [bytes]: %d\n", unpaddedRowSize);
@@ -173,7 +177,6 @@ namespace vision
     // ****Inputs***
     // fileName: The name of the file to open
     // pixels: A pointer to a byte array. This will contain the .bmp pixel data
-    //__attribute__((section(".ExtMem_write_bitmap")))
     void write_bitmap(const std::string fileName, Image &image, const int debug_mode)
     {
         if (image.chans() > 4)
@@ -191,7 +194,7 @@ namespace vision
         FILE *imageFile = fopen(fileName.c_str(), "wb");
 
         debug_printf("\n--------------------");
-        debug_printf("\nWriting to file...");
+        debug_printf("\nWriting image to .BMP file...");
 
         if (imageFile != NULL) // file was opened successfully
         {
@@ -283,7 +286,7 @@ namespace vision
             debug_printf("image rows: %d\n", image.rows());
             debug_printf("image row stride: %d\n", image.row_stride());
             debug_printf("image channels: %d\n", image.chans());
-            debug_printf("image colorspace: %s\n", (valColorspace[image.color()]).c_str());
+            debug_printf("image colorspace: %s\n", (valColorspace[image.get_colorspace()]).c_str());
             debug_printf("bits per pixel: %d\n", bitsPerPixel);
             debug_printf("bytes per pixel: %d\n", bytesPerPixel);
             debug_printf("unpadded row size [bytes]: %d\n", unpaddedRowSize);
@@ -293,6 +296,7 @@ namespace vision
             // ** Bitmap image data ** //
             // Write data to file
             // Flip image upside down (data is written from the end -> make begin = end)
+            // TODO Jira issue MAYA-54
             flip(image, ROW);
 
             // Make data unsigned before saving to file
@@ -315,7 +319,6 @@ namespace vision
             fclose(imageFile);
             debug_printf("File %s closed!\n", fileName.c_str());
             debug_printf("--------------------\n");
-
         }
         else // file couldn't be opened
         {
@@ -327,10 +330,10 @@ namespace vision
         portENABLE_INTERRUPTS()
     }
 
-    // ****Inputs***
     // fileName: The name of the binary file to open
     // vec: A vector of data.
-    void write_vec2bin(const std::string fileName, const std::vector<unsigned> vec)
+    template <typename T>
+    void write_vec2bin_tmp(const std::string fileName, const std::vector<T> vec)
     {
         std::ofstream out_file(fileName, std::ios::binary | std::ios::out);
         if (out_file.is_open())
@@ -349,10 +352,25 @@ namespace vision
 
     // ****Inputs***
     // fileName: The name of the binary file to open
+    // vec: A vector of uint8_t data.
+    void write_vec2bin(const std::string fileName, const std::vector<uint8_t> vec)
+    {
+        write_vec2bin_tmp<uint8_t>(fileName, vec);
+    }
+
+    // fileName: The name of the binary file to open
+    // vec: A vector of unisgned data.
+    void write_vec2bin(const std::string fileName, const std::vector<unsigned> vec)
+    {
+        write_vec2bin_tmp<unsigned>(fileName, vec);
+    }
+
+    // ****Inputs***
+    // fileName: The name of the binary file to open
     // image: Image data.
     void write_image_vec2bin(const std::string fileName, const Image &image)
     {
-        unsigned pixel_value;
+        uint8_t pixel_value;
         std::ofstream out_file(fileName, std::ios::binary | std::ios::out);
 
         debug_printf("\n--------------------");
@@ -398,6 +416,22 @@ namespace vision
         {
             std::cout << "Could not open file" + fileName;
             debug_printf("\n--------------------\n\n");
+        }
+    }
+
+    // This is a function to turn RGB bitmap like images into RGGB bayered images
+    // simply by deleting elements
+    void CheapBayerSim(Image &output, const Image &input)
+    {
+        output.resize(input.rows(), input.cols() * 2, 1);
+        output.clear();
+        for (int i = 0; i < input.rows(); i++)
+        {
+            for (int j = 0; j < input.cols(); j++)
+            {
+                output.image_data->at(output.get_sample_ind(i, 2 * j)) = input.get_sample(i, j, i % 2);
+                output.image_data->at(output.get_sample_ind(i, 2 * j + 1)) = input.get_sample(i, j, 1 + i % 2);
+            }
         }
     }
 

@@ -25,9 +25,8 @@ void ArrayToFile(uint8_t* DataPtr, int width, int height, int channels, char* fi
     }
     
     std::string stringpath = filepath;
-
+    
     /*Put all functions you want applied to the image here*/
     //dither(my_image, 3);
     write_bitmap(stringpath, my_image, 0);
-
 }

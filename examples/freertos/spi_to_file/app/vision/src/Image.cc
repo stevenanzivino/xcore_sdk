@@ -29,6 +29,16 @@ namespace vision
     mrow_stride = chans_ * cols_;
   }
 
+  // This function resets the dimensions of the image
+  void Image::set_dims(int rows_, int cols_, int chans_)
+  {
+    mrows = rows_;
+    mcols = cols_;
+    mchans = chans_;
+    mcol_stride = chans_;
+    mrow_stride = chans_ * cols_;
+  }
+
   // This function sets the colorspace of the image
   void Image::set_colorspace(Colorspace color_)
   {
@@ -43,9 +53,8 @@ namespace vision
 
   void Image::clear()
   {
-    // compiler will match memset, no dependency on <string> this way
     for (int i = 0; i < image_data->size(); i++)
-      *(image_data->data() + i) = 0;
+      *(image_data->data() + i) = -128;
   }
 
   sample_t *Image::get_row(int row)

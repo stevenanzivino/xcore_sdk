@@ -1,15 +1,12 @@
-#include <cassert> // assert()
-#include <cstring> // memmove()
-#include <math.h>  // round()
-#include <cmath>   // trunc()
-#include <iostream>
+#include <cassert>  /* assert */
+#include <cstring>  /* std::memmove */
+#include <iostream> /* std::cout */
 #include <limits>
-#include <algorithm> // std::min
-#include <stdint.h> //uint8_t
+#include <algorithm> /* std::min */
 
 #include "Image.h"
 #include "vision.h"
-#include "vision_utils.hpp"
+#include "vision_utils.hpp" /* debug_printf */
 
 namespace
 {
@@ -69,7 +66,7 @@ namespace vision
   // print verbose info on image
   void Image::print()
   {
-#ifndef NDEBUG
+
     int rcount = std::min(rows(), 10);
     int ccount = std::min(cols(), 10);
     debug_printf(
@@ -85,12 +82,15 @@ namespace vision
       {
         for (int j = 0; j < ccount; j++)
         {
-          debug_printf("0x%02X,", sample_to_index(image_data->operator[](c + i * row_stride() + j * col_stride())));
+          debug_printf("%d,", (int)sample_to_index(image_data->operator[](c + i * row_stride() + j * col_stride())));
         }
         debug_printf("\n");
       }
       debug_printf("\n");
     }
+
+    // sanity checks
+#ifndef NDEBUG
     assert(col_stride() == chans());
     assert(row_stride() == chans() * cols());
     assert(image_data->size() == rows() * cols() * chans());
@@ -98,34 +98,6 @@ namespace vision
 #endif
   }
 
-  // bankers' rounding
-  int bround(float x)
-  {
-    int out;
-    if (x - std::trunc(x) == .5 || x - std::trunc(x) == -.5)
-    {
-      out = round(x / 2) * 2;
-    }
-    else
-    {
-      out = round(x);
-    }
-    return out;
-  }
-  // odd bankers' rounding
-  int obround(float x)
-  {
-    int out;
-    if (x - std::trunc(x) == .5 || x - std::trunc(x) == -.5)
-    {
-      out = floor(x / 2) * 2 + 1;
-    }
-    else
-    {
-      out = round(x);
-    }
-    return out;
-  }
   // debayer input image stream
   int debayer_stream(sample_t *buffer, const int buf_len, const int row_len, const int current_row, const Method method)
   {
@@ -148,7 +120,11 @@ namespace vision
 
   void crop(Image &image, const Region &selection)
   {
+    // sanity checks
+#ifndef NDEBUG
     assert(image.is_valid(selection));
+#endif
+
     int len = selection.extents.col * image.col_stride();
 
     for (int i = 0; i < selection.extents.row; i++)
@@ -160,6 +136,16 @@ namespace vision
 
     // resize image
     image.resize(selection.extents.row, selection.extents.col, image.chans());
+
+    // sanity checks
+#ifndef NDEBUG
+    int new_image_size = image.rows() * image.cols() * image.chans();
+    std::cout << "new_image_size: " << new_image_size << std::endl
+              << std::endl;
+    assert(new_image_size >= MIN_IMG_SIZE);
+    assert(image.rows() >= MIN_IMG_HEIGHT);
+    assert(image.cols() >= MIN_IMG_WIDTH);
+#endif
   }
 
   void vertical_pad(Image &image, std::array<uint8_t, 4> color, const int before, const int after)
@@ -171,10 +157,17 @@ namespace vision
     // params.
     std::vector<sample_t> tmp; // tmp row vector used for padding
     auto old_rows = image.rows();
+    auto old_chans = image.chans();
 
     // resize
     image.resize(image.rows() + before + after, image.cols(), image.chans());
     tmp.resize(image.row_stride());
+
+    // if image is grayscale, convert 1st channel of color to grayscale and use it for padding
+    if (old_chans == 1)
+    {
+      color[0] = round(0.114f * color[0] + 0.5870f * color[1] + 0.299f * color[2]);
+    }
 
     // fill tmp vector with same color pixels
     for (int j = 0; j < image.cols(); j++)
@@ -214,10 +207,17 @@ namespace vision
     std::vector<sample_t> tmp; // tmp row vector used for padding
     auto old_row_stride = image.row_stride();
     auto old_start = image.get_sample_ind(image.rows() - 1, 0);
+    auto old_chans = image.chans();
 
     // resize
     image.resize(image.rows(), image.cols() + before + after, image.chans());
     tmp.resize(image.row_stride());
+
+    // if image is grayscale, convert 1st channel of color to grayscale and use it for padding
+    if (old_chans == 1)
+    {
+      color[0] = round(0.114f * color[0] + 0.5870f * color[1] + 0.299f * color[2]);
+    }
 
     // overwrite rows (moving upwards)
     for (int i = image.rows() - 1; i >= 0; i--)
@@ -268,10 +268,32 @@ namespace vision
       start -= old_row_stride;
     }
 
-    if (pre_bytes % old_chans == 0 && post_bytes % old_chans == 0)
+    // correct img dims after resize and byte padding!
+    image.set_dims(image.rows(), image.cols() / old_chans, old_chans);
+
+    if (pre_bytes / old_chans >= 1 && post_bytes % old_chans >= 1) // if pre-/post-bytes is >= n * chans => resize image and increase number of columns
     {
       image.resize(image.rows(), image.cols() / old_chans, old_chans);
     }
+  }
+
+  void horizontal_byte_crop(Image &image, const int pre_bytes, const int post_bytes)
+  {
+    int pad = pre_bytes + post_bytes;
+    int old_chans = image.chans();
+    int old_cols = image.cols();
+
+    // resize image
+    image.resize(image.rows(), image.cols() * image.chans() + pad, 1);
+
+    // overwrite rows (moving upwards)
+    for (int i = 0; i < image.rows(); i++)
+    {
+      memmove(image.image_data->data() + (image.row_stride() - pad) * i, image.image_data->data() + image.row_stride() * i + pre_bytes, image.row_stride() - pad);
+    }
+
+    // resize image
+    image.resize(image.rows(), old_cols, old_chans);
   }
 
   void channel_byte_pad(Image &image, const int before, const int after, const uint8_t value)
@@ -434,14 +456,17 @@ namespace vision
     // pretty print to screen
     debug_printf("get_bounding_box: row #%d, col #%d | height #%d, width #%d\n", box.top_left.row, box.top_left.col,
                  box.extents.row, box.extents.col);
-
-    return;
   }
 
   void bgr2gray(Image &image)
   {
+    // sanity checks
+#ifndef NDEBUG
+    assert(image.get_colorspace() == BGR);
+#endif
+
     std::vector<float> weights{0.114f, 0.5870f, 0.299f};
-    if (image.color() == BGR)
+    if (image.get_colorspace() == BGR)
     {
       for (int i = 0; i < image.image_data->size(); i += image.chans())
       {
@@ -461,7 +486,12 @@ namespace vision
 
   void bgr2bgra(Image &image, const uint8_t value)
   {
-    if (image.color() == BGR)
+    // sanity checks
+#ifndef NDEBUG
+    assert(image.get_colorspace() == BGR);
+#endif
+
+    if (image.get_colorspace() == BGR)
     {
       channel_byte_pad(image, 0, 1, value);
       image.set_colorspace(BGRA);
@@ -471,10 +501,16 @@ namespace vision
   void bgr2yuv(Image &image)
   {
     // [NVIDIA implementation]: https://docs.nvidia.com/cuda/npp/group__rgbtoyuv.html
+
+    // sanity checks
+#ifndef NDEBUG
+    assert(image.get_colorspace() == BGR);
+#endif
+
     std::vector<float> weights{0.114f, 0.5870f, 0.299f};
     float y, u, v;
 
-    if (image.color() == BGR)
+    if (image.get_colorspace() == BGR)
     {
       for (int i = 0; i < image.image_data->size() - image.chans() + 1; i += image.chans())
       {
@@ -498,11 +534,16 @@ namespace vision
   void yuv2bgr(Image &image)
   {
     // [NVIDIA implementation]: https://docs.nvidia.com/cuda/npp/group__yuvtorgb.html
+
+    // sanity checks
+#ifndef NDEBUG
+    assert(image.get_colorspace() == YUV);
+#endif
+
     float b, g, r;
 
-    if (image.color() == YUV)
+    if (image.get_colorspace() == YUV)
     {
-      std::cout << "YUV" << std::endl;
       for (int i = 0; i < image.image_data->size() - image.chans() + 1; i += image.chans())
       {
         b = sample_to_index(image.image_data->operator[](i)) + 2.032f * (sample_to_index(image.image_data->operator[](i + 1)) - 128.0f);
@@ -519,7 +560,10 @@ namespace vision
 
   void flip(Image &image, const Dimension dim)
   {
+    // sanity checks
+#ifndef NDEBUG
     assert(dim == ROW || dim == COL);
+#endif
 
     if (dim == ROW)
     {
@@ -622,12 +666,23 @@ namespace vision
     }
   }
 
-  void hist(const Image &image, std::vector<unsigned> &hist_vec, const unsigned ch, const unsigned nbins)
+  /*TODO for streaming version take 1 row at a time, chan count and a flag to clear first or not
+  also make the histogram vector an array*/
+  void hist(const Image &image, std::vector<int> &hist_vec, const int ch, const int nbins)
   {
-    unsigned pixel_value;
+    uint8_t pixel_value;
     int hist_bin, bin_width;
+
+    // sanity checks
+#ifndef NDEBUG
     assert(nbins > 0);
+#endif
+
+    // calculate histogram bin width
     bin_width = (int)ceil((float)(std::numeric_limits<sample_t>::max() - std::numeric_limits<sample_t>::min() + 1) / nbins);
+
+    // resize histogram to fit nbins
+    hist_vec.resize(nbins);
 
     // initialize histogram values with 0
     for (auto &e : hist_vec)
@@ -635,23 +690,16 @@ namespace vision
       e = 0;
     }
 
-    // resize histogram to fit nbins
-    hist_vec.resize(nbins);
-
-    for (int k = 0; k < image.image_data->size(); k++)
+    for (int k = ch; k < image.image_data->size(); k = k + image.chans())
     {
-      int c = k % image.chans();
-      if (c == ch)
-      {
-        // signed -> unsigned pixel value
-        pixel_value = sample_to_index(image.image_data->at(k));
+      // signed -> unsigned pixel value
+      pixel_value = sample_to_index(image.image_data->at(k));
 
-        // find histogram bin to update
-        hist_bin = (int)((float)pixel_value / bin_width);
+      // find histogram bin to update
+      hist_bin = (int)((float)pixel_value / bin_width);
 
-        // update histogram
-        hist_vec[hist_bin]++;
-      }
+      // update histogram
+      hist_vec[hist_bin]++;
     }
   }
 

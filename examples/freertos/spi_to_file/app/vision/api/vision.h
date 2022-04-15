@@ -1,9 +1,11 @@
-#ifndef VISION_H
-#define VISION_H
-
+#pragma once
 #include <memory>
 #include <vector>
 #include <array>
+#define MIN_IMG_SIZE 4
+#define MAX_IMG_SIZE 10000000
+#define MIN_IMG_HEIGHT 2
+#define MIN_IMG_WIDTH 2
 
 /**
  * Goals of the c++ library
@@ -88,7 +90,8 @@ namespace vision
   /**
    * Writes a vector to a binary file.
    **/
-  void write_vec2bin(const std::string filename, const std::vector<unsigned> vec);
+  void write_vec2bin(const std::string filename, const std::vector<int> vec);
+  void write_vec2bin(const std::string filename, const std::vector<uint8_t> vec);
   /**
    * Writes a box array ([top_left.row, top_left.col, extents.row, extents.col]) to a binary file.
    **/
@@ -97,6 +100,16 @@ namespace vision
    * Writes an image vector to a binary file.
    **/
   void write_image_vec2bin(const std::string filename, const Image &image);
+
+  /**
+   * Turns RGB into RGGB poorly for testing bayer functions
+   **/
+  void CheapBayerSim(Image &output, const Image &input);
+
+  /**
+   * Turns RGB into RGGB poorly for testing bayer functions
+   **/
+  void CheapBayerSim2(Image &output, const Image &input);
 
   /**
    * Crop an image to a Region
@@ -118,7 +131,12 @@ namespace vision
   /**
    * Add bytes on the left / right of an image
    **/
-  void horizontal_byte_pad(Image &image, int pre_bytes, int post_bytes, uint8_t value);
+  void horizontal_byte_pad(Image &image, const int pre_bytes, const int post_bytes, uint8_t value);
+
+  /**
+   * Removes bytes on the left / right of an image
+   **/
+  void horizontal_byte_crop(Image &image, const int pre_bytes, const int post_bytes);
 
   /**
    * Add color columns (chans x bytes) on the left / right of an image
@@ -166,20 +184,6 @@ namespace vision
   void get_bounding_box(Region &box, const std::vector<RowCol> points);
 
   /**
-   * Round a float number to the nearest integer using bankers' rounding algorithm:
-   * x.5 is rounded up or down to the nearest even integer.
-   *
-   */
-  // bankers' rounding
-  int bround(float x);
-  /**
-   * Round a float number to the nearest integer using round-to-nearest-odd integer algorithm:
-   * x.5 is rounded up or down to the nearest odd integer.
-   *
-   */
-  // round-to-nearest-odd integer rounding
-  int obround(float x);
-  /**
    * Debayers a caller managed buffer in place.
    *
    * @return number of bytes written out
@@ -198,6 +202,8 @@ namespace vision
    * |RGRGRGRGRGRGRG...|
    * |GBGBGBGBGBGBGB...|
    * |.................|
+   *
+   * @note for a higher performance debayer+downsample see streaming_functions.hpp
    * */
   int debayer_stream(sample_t *buffer, int buf_len, int row_len, int current_row, Method method);
 
@@ -302,7 +308,7 @@ namespace vision
    *
    * TODO decide storage order
    **/
-  void hist(const Image &image, std::vector<unsigned> &hist_vec, const unsigned ch, const unsigned nbins);
+  void hist(const Image &image, std::vector<int> &hist_vec, const int ch, const int nbins);
   /**
    * Add mag to every pixel
    * + numbers brighten
@@ -433,5 +439,3 @@ namespace vision
   void draw_points(Image &image, std::array<uint8_t, 4> color, const std::vector<RowCol> points, const int thickness);
 
 } // namespace vision
-
-#endif // VISION_H

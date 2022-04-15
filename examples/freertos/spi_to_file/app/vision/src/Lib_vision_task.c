@@ -27,10 +27,10 @@ void lib_vision_task(void *args){
   const char Filepath[] = "./images/output_image.bmp";
   const char Filepath1[] = "./images/output_image1.bmp";
   const char Filepath2[] = "./images/output_image2.bmp";
-  /*const char Filepath3[] = "./images/output_image3.bmp";
+  const char Filepath3[] = "./images/output_image3.bmp";
   const char Filepath4[] = "./images/output_image4.bmp";
   const char Filepath5[] = "./images/output_image5.bmp";
-  const char Filepath6[] = "./images/output_image6.bmp";
+  /*const char Filepath6[] = "./images/output_image6.bmp";
   const char Filepath7[] = "./images/output_image7.bmp";
   const char Filepath8[] = "./images/output_image8.bmp";
   const char Filepath9[] = "./images/output_image9.bmp";
@@ -55,10 +55,10 @@ void lib_vision_task(void *args){
     ArrayToFile(final_img_buf,width,height,channels,Filepath);
     ArrayToFile(final_img_buf,width,height,channels,Filepath1);
     ArrayToFile(final_img_buf,width,height,channels,Filepath2);
-    /*ArrayToFile(final_img_buf,width,height,channels,Filepath3);
+    ArrayToFile(final_img_buf,width,height,channels,Filepath3);
     ArrayToFile(final_img_buf,width,height,channels,Filepath4);
     ArrayToFile(final_img_buf,width,height,channels,Filepath5);
-    ArrayToFile(final_img_buf,width,height,channels,Filepath6);
+    /*ArrayToFile(final_img_buf,width,height,channels,Filepath6);
     ArrayToFile(final_img_buf,width,height,channels,Filepath7);
     ArrayToFile(final_img_buf,width,height,channels,Filepath8);
     ArrayToFile(final_img_buf,width,height,channels,Filepath9);
